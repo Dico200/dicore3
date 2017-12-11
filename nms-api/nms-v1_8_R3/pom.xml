@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.dico.dicore</groupId>
+        <artifactId>dicore3</artifactId>
+        <version>1.0</version>
+    </parent>
+    <artifactId>dicore3-nms-v1_8_R3</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.dico.dicore</groupId>
+            <artifactId>dicore3-nms-api</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.dico.dicore</groupId>
+            <artifactId>dicore3-core</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>net.minecraft.server</groupId>
+            <artifactId>server</artifactId>
+            <version>v1_8_R3</version>
+            <scope>system</scope>
+            <systemPath>D:/Resources/Java/minecraft/spigot-1.8.8.jar</systemPath>
+        </dependency>
+    </dependencies>
+
+</project>
