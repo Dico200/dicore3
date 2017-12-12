@@ -82,10 +82,10 @@ public class ArgumentBuffer extends AbstractList<String> implements Iterator<Str
         return hasNext() ? get(cursor++) : null;
     }
     
-    public String requireNext(String parameterName) throws CommandException {
+    public String requireNext(String parameterName) throws ExecutionException {
         String next = next();
         if (next == null) {
-            throw CommandException.missingArgument(parameterName);
+            throw ExecutionException.missingArgument(parameterName);
         }
         return next;
     }

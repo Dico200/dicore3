@@ -17,12 +17,7 @@ public class CommandException extends Exception {
         super(cause);
     }
     
-    public static CommandException missingArgument(String parameterName) {
-        return new CommandException("Missing argument for " + parameterName);
+    public CommandException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
-    
-    public static CommandException invalidArgument(String parameterName, String syntaxHelp) {
-        return new CommandException("Invalid input for " + parameterName + ", should be " + syntaxHelp);
-    }
-    
 }
