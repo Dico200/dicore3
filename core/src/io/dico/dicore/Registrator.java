@@ -194,12 +194,12 @@ public final class Registrator {
             if (pluginEnableListener != null) {
                 pluginEnableListener = pluginEnableListener.setPlugin(plugin);
             } else {
-                pluginEnableListener = createRegistration(false, EventPriority.NORMAL, false, PluginEnableEvent.class, this::onPluginEnable);
+                pluginEnableListener = createRegistration(false, false, EventPriority.NORMAL, false, PluginEnableEvent.class, this::onPluginEnable);
             }
             if (pluginDisableListener != null) {
                 pluginDisableListener = pluginDisableListener.setPlugin(plugin);
             } else {
-                pluginDisableListener = createRegistration(false, EventPriority.NORMAL, false, PluginDisableEvent.class, this::onPluginDisable);
+                pluginDisableListener = createRegistration(false, false, EventPriority.NORMAL, false, PluginDisableEvent.class, this::onPluginDisable);
             }
         }
     }
@@ -250,7 +250,7 @@ public final class Registrator {
         }
     }
     
-    private <T extends Event> Registration createRegistration(boolean findCaller, EventPriority priority, boolean ignoreCancelled, Class<T> eventClass, Consumer<? super T> handler) {
+    private <T extends Event> Registration createRegistration(boolean findCaller, boolean asHandle, EventPriority priority, boolean ignoreCancelled, Class<T> eventClass, Consumer<? super T> handler) {
         StackTraceElement caller = null;
         if (findCaller) {
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -266,6 +266,9 @@ public final class Registrator {
         }
         
         EventExecutor executor = newEventExecutor(eventClass, handler);
+        if (asHandle) {
+            return new RegistrationWithHandle(eventClass, caller, executor, priority, plugin, ignoreCancelled);
+        }
         return new Registration(eventClass, caller, executor, priority, plugin, ignoreCancelled);
     }
     
@@ -300,6 +303,78 @@ public final class Registrator {
      */
     public List<Registration> getListeners() {
         return Collections.unmodifiableList(registrations);
+    }
+    
+    /**
+     * Make a new listener handle for the given event type.
+     * The returned listener handle is not managed by this {@link Registrator}, and you must register it yourself.
+     * the event priority is set to {@link EventPriority#HIGHEST}
+     * the ignore cancelled flag is set to {@code true}
+     *
+     * @param eventClass The event type
+     * @param handler    the listener
+     * @param <T>        the event type
+     * @return this
+     */
+    public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, Consumer<? super T> handler) {
+        return makeListenerHandle(eventClass, EventPriority.HIGHEST, handler);
+    }
+    
+    /**
+     * Make a new listener handle for the given event type.
+     * The returned listener handle is not managed by this {@link Registrator}, and you must register it yourself.
+     * The ignoreCancelled flag is set to false if {@code priority} is {@link EventPriority#LOW} or {@link EventPriority#LOWEST}
+     * otherwise, it is set to true.
+     *
+     * @param eventClass The event type
+     * @param priority   the event priority
+     * @param handler    the listener
+     * @param <T>        the event type
+     * @return this
+     */
+    public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, EventPriority priority, Consumer<? super T> handler) {
+        boolean ignoreCancelled = Cancellable.class.isAssignableFrom(eventClass) && priority.getSlot() > EventPriority.LOW.getSlot();
+        return makeListenerHandle(eventClass, priority, ignoreCancelled, handler);
+    }
+    
+    /**
+     * Make a new listener handle for the given event type.
+     * The returned listener handle is not managed by this {@link Registrator}, and you must register it yourself.
+     * If {@code ignoreCancelled} is true, the event priority is set to {@link EventPriority#HIGHEST}
+     * Otherwise, it is set to {@link EventPriority#LOW}
+     *
+     * @param eventClass      The event type
+     * @param ignoreCancelled the ignoreCancelled flag of the listener
+     * @param handler         The listener
+     * @param <T>             The event type
+     * @return this
+     */
+    public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, boolean ignoreCancelled, Consumer<? super T> handler) {
+        return makeListenerHandle(eventClass, ignoreCancelled ? EventPriority.HIGHEST : EventPriority.LOW, ignoreCancelled, handler);
+    }
+    
+    /**
+     * Make a new listener handle for the given event type.
+     * The returned listener handle is not managed by this {@link Registrator}, and you must register it yourself.
+     *
+     * @param eventClass      The event type
+     * @param priority        the event priority
+     * @param ignoreCancelled the ignoreCancelled flag of the listener
+     * @param handler         the listener
+     * @param <T>             the event type
+     * @return this
+     */
+    public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, Consumer<? super T> handler) {
+        Registration listener = createRegistration(true, true, priority, ignoreCancelled, eventClass, handler);
+        /*
+        Below code is disabled because the returned listener handle is not managed.
+        registrations.add(listener);
+        
+        if (enabled) {
+            listener.register();
+        }
+        */
+        return (ListenerHandle) listener;
     }
     
     /**
@@ -358,7 +433,7 @@ public final class Registrator {
      * @return this
      */
     public <T extends Event> Registrator registerListener(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, Consumer<? super T> handler) {
-        Registration listener = createRegistration(true, priority, ignoreCancelled, eventClass, handler);
+        Registration listener = createRegistration(true, false, priority, ignoreCancelled, eventClass, handler);
         registrations.add(listener);
         
         if (enabled) {
@@ -372,7 +447,7 @@ public final class Registrator {
         return registerListener(PlayerKickEvent.class, EventPriority.NORMAL, handler);
     }
     
-    public static final class Registration extends RegisteredListener {
+    public static class Registration extends RegisteredListener {
         private final EventExecutor executor;
         private final Class<?> eventClass;
         private final StackTraceElement caller;
@@ -389,6 +464,7 @@ public final class Registrator {
             if (getPlugin() == plugin) {
                 return this;
             }
+            boolean registered = this.registered;
             unregister();
             Registration out = new Registration(eventClass, caller, executor, getPriority(), plugin, isIgnoringCancelled());
             if (registered) {
@@ -428,6 +504,22 @@ public final class Registrator {
             return "Listener for " + eventClass.getSimpleName() + (caller == null ? "" : " registered at " + caller.toString());
         }
         
+    }
+    
+    private static final class RegistrationWithHandle extends Registration implements ListenerHandle {
+        RegistrationWithHandle(Class<?> eventClass, StackTraceElement caller, EventExecutor executor, EventPriority priority, Plugin plugin, boolean ignoreCancelled) {
+            super(eventClass, caller, executor, priority, plugin, ignoreCancelled);
+        }
+    
+        @Override
+        public void register() {
+            super.register();
+        }
+    
+        @Override
+        public void unregister() {
+            super.unregister();
+        }
     }
     
     private static final class HandlerListInfo {
