@@ -10,6 +10,7 @@
     </parent>
     <artifactId>dicore3-core</artifactId>
     <packaging>jar</packaging>
+    <version>1.0.1</version>
 
     <dependencies>
         <dependency>

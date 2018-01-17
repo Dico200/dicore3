@@ -1,4 +1,4 @@
-package io.dico.dicore;
+package io.dico.dicore.event;
 
 public interface ListenerHandle {
     
