@@ -3,12 +3,14 @@ package io.dico.dicore.modules;
 import io.dico.dicore.Formatting;
 import io.dico.dicore.Registrator;
 import io.dico.dicore.TickTask;
+import io.dico.dicore.event.ListenerHandle;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -192,6 +194,35 @@ public class DicoPlugin extends JavaPlugin implements ModuleManager {
     @Override
     public Plugin getPlugin() {
         return this;
+    }
+    
+    public ListenerHandle makeTaskHandle(long delay, long period, Runnable action) {
+        return makeTaskHandle(this, delay, period, action);
+    }
+    
+    public static ListenerHandle makeTaskHandle(Plugin plugin, long delay, long period, Runnable action) {
+        return new ListenerHandle() {
+            BukkitTask task;
+        
+            @Override
+            public void register() {
+                if (task != null) {
+                    if (plugin.getServer().getScheduler().isCurrentlyRunning(task.getTaskId())) {
+                        return;
+                    }
+                    task.cancel();
+                }
+                task = plugin.getServer().getScheduler().runTaskTimer(plugin, action, delay, period);
+            }
+        
+            @Override
+            public void unregister() {
+                if (task != null) {
+                    task.cancel();
+                    task = null;
+                }
+            }
+        };
     }
     
 }
