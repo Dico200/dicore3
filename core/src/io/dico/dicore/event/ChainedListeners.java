@@ -10,7 +10,7 @@ public class ChainedListeners {
         }
         
         @Override
-        public ChainedListener<Object> andThen(SimpleListener other) {
+        public ChainedListener<Object> withElement(SimpleListener other) {
             return ChainedListeners.singleton(other);
         }
         

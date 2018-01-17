@@ -8,7 +8,7 @@ public interface ChainedRunnable extends InterfaceChain<Runnable, ChainedRunnabl
         return EMPTY;
     }
     
-    default ChainedRunnable andThen(Runnable other) {
+    default ChainedRunnable withElement(Runnable other) {
         if (other == null) {
             return this;
         }
@@ -48,7 +48,7 @@ public interface ChainedRunnable extends InterfaceChain<Runnable, ChainedRunnabl
         }
         
         @Override
-        public ChainedRunnable andThen(Runnable other) {
+        public ChainedRunnable withElement(Runnable other) {
             return ChainedRunnable.singleton(other);
         }
         

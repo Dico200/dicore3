@@ -10,7 +10,7 @@ public interface ChainedListenerHandle extends InterfaceChain<ListenerHandle, Ch
     }
     
     @Override
-    default ChainedListenerHandle andThen(ListenerHandle element) {
+    default ChainedListenerHandle withElement(ListenerHandle element) {
         if (element == null) {
             return this;
         }

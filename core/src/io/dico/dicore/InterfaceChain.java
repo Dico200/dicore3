@@ -34,7 +34,7 @@ public interface InterfaceChain<Element, Subtype extends InterfaceChain<Element,
     /**
      * returns the element that was inserted as the last element
      * <p>
-     * For instance, calling this method on the result of calling {@link InterfaceChain#andThen(Object)}
+     * For instance, calling this method on the result of calling {@link InterfaceChain#withElement(Object)}
      * would return the given element.
      *
      * @return the element that was inserted as the last element
@@ -95,7 +95,7 @@ public interface InterfaceChain<Element, Subtype extends InterfaceChain<Element,
      * @param element A new element to insert at the end of this InterfaceChain.
      * @return a new InterfaceChain that includes the given Element.
      */
-    Subtype andThen(Element element);
+    Subtype withElement(Element element);
     
     /**
      * Append each of the elements to this InterfaceChain
@@ -103,10 +103,10 @@ public interface InterfaceChain<Element, Subtype extends InterfaceChain<Element,
      * @param elements the elements to append
      * @return a new InterfaceChain with the elements appended
      */
-    default Subtype andThen(Element... elements) {
+    default Subtype withElements(Element... elements) {
         Subtype result = (Subtype) this;
         for (Element element : elements) {
-            result = result.andThen(elements);
+            result = result.withElement(element);
         }
         return result;
     }
@@ -127,7 +127,7 @@ public interface InterfaceChain<Element, Subtype extends InterfaceChain<Element,
                 }
             
                 @Override
-                public Subtype andThen(Element other) {
+                public Subtype withElement(Element other) {
                     return Subtypes.singleton(other);
                 }
             

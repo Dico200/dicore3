@@ -17,7 +17,7 @@ public class ChainedListenerHandles {
         }
         
         @Override
-        public ChainedListenerHandle andThen(ListenerHandle other) {
+        public ChainedListenerHandle withElement(ListenerHandle other) {
             return ChainedListenerHandles.singleton(other);
         }
         

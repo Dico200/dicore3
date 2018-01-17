@@ -28,6 +28,20 @@ public final class HandlerList<T> {
             refresh();
         }
     }
+    
+    public ListenerHandle getListenerHandle(Listener<T> listener) {
+        return new ListenerHandle() {
+            @Override
+            public void register() {
+                HandlerList.this.register(listener);
+            }
+    
+            @Override
+            public void unregister() {
+                HandlerList.this.unregister(listener);
+            }
+        };
+    }
 
     public void register(EventPriority priority, Consumer<T> listener) {
         register(new Listener<T>() {

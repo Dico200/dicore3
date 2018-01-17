@@ -10,7 +10,7 @@ public interface ChainedListener<T> extends InterfaceChain<SimpleListener<T>, Ch
     }
     
     @Override
-    default ChainedListener<T> andThen(SimpleListener<T> element) {
+    default ChainedListener<T> withElement(SimpleListener<T> element) {
         if (element == null) {
             return this;
         }

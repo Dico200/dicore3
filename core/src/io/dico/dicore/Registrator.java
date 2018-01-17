@@ -1,5 +1,6 @@
 package io.dico.dicore;
 
+import io.dico.dicore.event.ChainedListenerHandles;
 import io.dico.dicore.event.ListenerHandle;
 import org.bukkit.Server;
 import org.bukkit.event.*;
@@ -443,7 +444,13 @@ public final class Registrator {
         return this;
     }
     
-    public Registrator onPlayerQuit(Consumer<? super PlayerEvent> handler) {
+    public ListenerHandle makePlayerQuitListenerHandle(Consumer<? super PlayerEvent> handler) {
+        ListenerHandle first = makeListenerHandle(PlayerQuitEvent.class, EventPriority.NORMAL, handler);
+        ListenerHandle second = makeListenerHandle(PlayerKickEvent.class, EventPriority.NORMAL, handler);
+        return ChainedListenerHandles.singleton(first).withElement(second);
+    }
+    
+    public Registrator registerPlayerQuitListener(Consumer<? super PlayerEvent> handler) {
         registerListener(PlayerQuitEvent.class, EventPriority.NORMAL, handler);
         return registerListener(PlayerKickEvent.class, EventPriority.NORMAL, handler);
     }
