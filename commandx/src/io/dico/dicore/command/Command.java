@@ -1,12 +1,16 @@
 package io.dico.dicore.command;
 
-import io.dico.dicore.command.parameter.ParameterParser;
-import io.dico.dicore.command.parameter.ParameterSet;
+import io.dico.dicore.command.group.NamedGroup;
 
-public class Command extends Group {
+public class Command extends NamedGroup {
     private ParameterSet parameters;
     
-    public boolean shouldExecuteInsteadOfChild(Group child, ParameterParser parser) {
+    public Command(String name) {
+        super(name);
+        parameters = new ParameterSet();
+    }
+    
+    public boolean shouldExecuteInsteadOfChild(NamedGroup child, ExecutionContextBuilder contextBuilder) {
         return false;
     }
     

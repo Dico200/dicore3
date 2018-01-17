@@ -1,4 +1,4 @@
-package io.dico.dicore.command.parameter;
+package io.dico.dicore.command;
 
 import io.dico.dicore.command.ExecutionException;
 

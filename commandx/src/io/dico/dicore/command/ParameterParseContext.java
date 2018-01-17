@@ -1,19 +1,19 @@
-package io.dico.dicore.command.parameter;
+package io.dico.dicore.command;
 
 public final class ParameterParseContext {
-    private ParameterParser parser;
+    private ExecutionContextBuilder contextBuilder;
     private Parameter<?> currentParameter;
     
-    public ParameterParseContext(ParameterParser parser) {
-        this.parser = parser;
+    public ParameterParseContext(ExecutionContextBuilder contextBuilder) {
+        this.contextBuilder = contextBuilder;
     }
     
     void setCurrentParameter(Parameter<?> currentParameter) {
         this.currentParameter = currentParameter;
     }
     
-    public ParameterParser getParser() {
-        return parser;
+    public ExecutionContextBuilder getContextBuilder() {
+        return contextBuilder;
     }
     
     public Parameter<?> getParameter() {
@@ -25,6 +25,10 @@ public final class ParameterParseContext {
             //noinspection unchecked
             return (TOptions) currentParameter.getOptions();
         } catch (ClassCastException ex) {
+            Constants.logger.severe("ParameterType " + currentParameter.getType() +
+                    " for type " + currentParameter.getType().getReturnType().getTypeName() +
+                    " requested its options in the wrong type: ");
+            Constants.logger.throwing(ParameterParseContext.class.getName(), "Object getOptions()", ex);
             return null;
         }
     }

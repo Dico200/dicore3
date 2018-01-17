@@ -1,4 +1,4 @@
-package io.dico.dicore.command.parameter;
+package io.dico.dicore.command;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

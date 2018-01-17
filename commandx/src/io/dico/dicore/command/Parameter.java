@@ -1,4 +1,4 @@
-package io.dico.dicore.command.parameter;
+package io.dico.dicore.command;
 
 public final class Parameter<T> {
     private ParameterType<T> type;
@@ -52,23 +52,8 @@ public final class Parameter<T> {
         return options;
     }
     
+    public T getDefaultValue(ExecutionContextBuilder builder) {
     
-    
-    /*
-    / **
-     * Parses the input to create a value of the type of this parameter.
-     * For example, a name might be split off the buffer by calling its {@link ArgumentBuffer#next()} method
-     * and a {@link org.bukkit.entity.Player} object might be parsed off it.
-     * <p>
-     * It is possible that none of the arguments in the buffer are requested.
-     * This might be the case with flags that take no argument.
-     *
-     * @param context the context of the execution
-     * @param buffer  the arguments
-     * @return a value computed by parsing the input
-     * @throws ParameterParseException if the input is not understood, or any other reason the parse might fail,
-     *                                 in which case a message explaining the problem is included.
-     * /
-    */
+    }
     
 }
