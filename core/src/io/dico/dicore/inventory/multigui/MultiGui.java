@@ -2,9 +2,11 @@ package io.dico.dicore.inventory.multigui;
 
 import io.dico.dicore.SpigotUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Collections;
@@ -70,7 +72,20 @@ public class MultiGui {
     }
     
     protected void onInventoryDrag(InventoryDragEvent event) {
-    
+        Inventory inventory = this.inventory;
+        if (event.getInventory() != inventory) {
+            return;
+        }
+        
+        Map<Integer, ItemStack> newItems = event.getNewItems();
+        InventoryView view = event.getView();
+        for (Map.Entry<Integer, ItemStack> entry : newItems.entrySet()) {
+            int slot = view.convertSlot(entry.getKey());
+            if (!allowSlotChange(event, slot, inventory.getItem(slot), entry.getValue())) {
+                event.setCancelled(true);
+                break;
+            }
+        }
     }
     
     protected void onInventoryOpen(InventoryOpenEvent event) {
@@ -78,7 +93,10 @@ public class MultiGui {
     }
     
     protected void onInventoryClose(MultiGuiDriver driver, InventoryCloseEvent event) {
-    
+        if (inventory.getViewers().size() <= 1) {
+            driver.removeGui(this);
+            inventory.getViewers().forEach(HumanEntity::closeInventory);
+        }
     }
     
     protected boolean allowSlotChange(InventoryInteractEvent event, int slot, ItemStack oldItem, ItemStack newItem) {
