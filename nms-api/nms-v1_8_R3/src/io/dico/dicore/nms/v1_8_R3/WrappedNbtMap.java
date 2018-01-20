@@ -366,4 +366,9 @@ final class WrappedNbtMap implements INbtMap {
         return map.hashCode();
     }
     
+    @Override
+    public String toString() {
+        return "INbtMap[" + delegate.toString() + "]";
+    }
+    
 }

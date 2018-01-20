@@ -12,7 +12,7 @@ package io.dico.dicore;
 import gnu.trove.map.TCharObjectMap;
 import gnu.trove.map.hash.TCharObjectHashMap;
 
-public class Formatting implements CharSequence {
+public final class Formatting implements CharSequence {
     public static final char FORMAT_CHAR = '\u00a7';
     private static final TCharObjectMap<Formatting> singleCharInstances = new TCharObjectHashMap<>(16, .5F, '\0');
     
@@ -155,6 +155,10 @@ public class Formatting implements CharSequence {
         }
         
         return formats[1] == '\0' ? from(formats[0]) : new Formatting(formats);
+    }
+    
+    public static String translate(String input) {
+        return translateChars('&', input);
     }
     
     public static String translateChars(char alternateChar, String input) {

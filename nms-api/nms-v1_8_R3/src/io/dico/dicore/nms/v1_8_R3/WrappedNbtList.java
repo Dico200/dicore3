@@ -257,4 +257,9 @@ final class WrappedNbtList extends AbstractList<Object> implements INbtList, Ran
         return list.hashCode();
     }
     
+    @Override
+    public String toString() {
+        return "INbtList[" + delegate.toString() + "]";
+    }
+    
 }
