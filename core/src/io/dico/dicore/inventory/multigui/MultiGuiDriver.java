@@ -1,6 +1,7 @@
 package io.dico.dicore.inventory.multigui;
 
 import io.dico.dicore.Registrator;
+import io.dico.dicore.event.ChainedListenerHandle;
 import io.dico.dicore.event.ChainedListenerHandles;
 import io.dico.dicore.event.ListenerHandle;
 import org.bukkit.event.EventHandler;
@@ -36,11 +37,12 @@ public class MultiGuiDriver implements Listener {
     }
     
     public ListenerHandle makeListenerHandle(Registrator registrator) {
-        return ChainedListenerHandles.empty()
-                .withElement(registrator.makeListenerHandle(InventoryClickEvent.class, HIGHEST, false, this::onInventoryClick))
-                .withElement(registrator.makeListenerHandle(InventoryDragEvent.class, HIGHEST, false, this::onInventoryDrag))
-                .withElement(registrator.makeListenerHandle(InventoryCloseEvent.class, HIGHEST, false, this::onInventoryClose))
-                .withElement(registrator.makeListenerHandle(InventoryOpenEvent.class, HIGHEST, false, this::onInventoryOpen));
+        ChainedListenerHandle rv = ChainedListenerHandles.empty();
+        rv = rv.withElement(registrator.makeListenerHandle(InventoryClickEvent.class, HIGHEST, false, this::onInventoryClick));
+        rv = rv.withElement(registrator.makeListenerHandle(InventoryDragEvent.class, HIGHEST, false, this::onInventoryDrag));
+        rv = rv.withElement(registrator.makeListenerHandle(InventoryCloseEvent.class, HIGHEST, false, this::onInventoryClose));
+        rv = rv.withElement(registrator.makeListenerHandle(InventoryOpenEvent.class, HIGHEST, false, this::onInventoryOpen));
+        return rv;
     }
     
     @EventHandler(priority = HIGHEST)

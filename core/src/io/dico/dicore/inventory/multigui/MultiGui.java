@@ -2,6 +2,7 @@ package io.dico.dicore.inventory.multigui;
 
 import io.dico.dicore.SpigotUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.*;
@@ -9,6 +10,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -20,95 +22,17 @@ public class MultiGui {
     protected static final boolean Allow = true;
     protected final Inventory inventory;
     protected boolean computeNewItem = false;
+    private boolean disposingOnClose = true;
+    protected int maxViewers = Integer.MAX_VALUE;
     
     protected MultiGui() {
         this.inventory = createInventory();
         refreshItems(inventory);
     }
     
-    public final Inventory getInventory() {
-        return inventory;
-    }
-    
-    public void openTo(Player player) {
-        player.openInventory(inventory);
-    }
-    
-    public void refreshItems() {
-        refreshItems(inventory);
-    }
-    
-    protected void onInventoryClick(InventoryClickEvent event) {
-        if (event.getResult() == DENY) {
-            return;
-        }
-        
-        
-        Inventory clicked = event.getClickedInventory();
-        if (clicked != inventory) {
-            // they clicked in their own inventory
-    
-            if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
-                ItemStack added = event.getCurrentItem();
-                if (!SpigotUtil.isItemPresent(added)) {
-                    return;
-                }
-        
-                Map<Integer, ItemStack> changes = deduceChangesIfItemAdded(getInventory(), added, computeNewItem);
-                for (Map.Entry<Integer, ItemStack> entry : changes.entrySet()) {
-                    if (!allowSlotChange(event, entry.getKey(), getInventory().getItem(entry.getKey()), entry.getValue())) {
-                        event.setCancelled(true);
-                        break;
-                    }
-                }
-            }
-        } else {
-            // they clicked in the gui
-            
-            if (!allowSlotChange(event, event.getSlot(), clicked.getItem(event.getSlot()), computeNewItem ? getNewItem(event) : null)) {
-                event.setCancelled(true);
-            }
-        }
-    }
-    
-    protected void onInventoryDrag(InventoryDragEvent event) {
-        Inventory inventory = this.inventory;
-        if (event.getInventory() != inventory) {
-            return;
-        }
-        
-        Map<Integer, ItemStack> newItems = event.getNewItems();
-        InventoryView view = event.getView();
-        for (Map.Entry<Integer, ItemStack> entry : newItems.entrySet()) {
-            int slot = view.convertSlot(entry.getKey());
-            if (!allowSlotChange(event, slot, inventory.getItem(slot), entry.getValue())) {
-                event.setCancelled(true);
-                break;
-            }
-        }
-    }
-    
-    protected void onInventoryOpen(InventoryOpenEvent event) {
-    
-    }
-    
-    protected void onInventoryClose(MultiGuiDriver driver, InventoryCloseEvent event) {
-        if (inventory.getViewers().size() <= 1) {
-            driver.removeGui(this);
-            inventory.getViewers().forEach(HumanEntity::closeInventory);
-        }
-    }
-    
-    protected boolean allowSlotChange(InventoryInteractEvent event, int slot, ItemStack oldItem, ItemStack newItem) {
-        return Allow;
-    }
-    
-    protected Inventory createInventory() {
-        return Bukkit.createInventory(null, 9);
-    }
-    
-    protected void refreshItems(Inventory inventory) {
-    
+    protected MultiGui(MultiGuiDriver driver) {
+        this();
+        driver.addGui(this);
     }
     
     private static Map<Integer, ItemStack> deduceChangesIfItemAdded(Inventory inventory, ItemStack added, boolean computeNewItem) {
@@ -119,9 +43,9 @@ public class MultiGui {
             if (addedAmount <= 0) break;
             
             ItemStack current = inventory.getItem(i);
-            if (current.isSimilar(added)) {
-                int count = current.getAmount();
-                int max = current.getType().getMaxStackSize();
+            if (current == null || current.getType() == Material.AIR || current.isSimilar(added)) {
+                int count = current == null ? 0 : current.getAmount();
+                int max = (current == null ? added : current).getType().getMaxStackSize();
                 if (count < max) {
                     int diff = max - count;
                     if (diff > addedAmount) {
@@ -132,7 +56,7 @@ public class MultiGui {
                     if (rv.isEmpty()) rv = new LinkedHashMap<>();
                     
                     if (computeNewItem) {
-                        current = current.clone();
+                        current = (current == null ? added : current).clone();
                         current.setAmount(count + diff);
                         rv.put(i, current);
                     } else {
@@ -182,4 +106,143 @@ public class MultiGui {
         }
     }
     
+    public final Inventory getInventory() {
+        return inventory;
+    }
+    
+    public final void open(HumanEntity entity) {
+        entity.openInventory(inventory);
+    }
+    
+    public final void refreshItems() {
+        refreshItems(inventory);
+    }
+    
+    public final boolean isDisposingOnClose() {
+        return disposingOnClose;
+    }
+    
+    public final void setDisposingOnClose(boolean disposingOnClose) {
+        this.disposingOnClose = disposingOnClose;
+    }
+    
+    public final boolean hasViewers() {
+        return !inventory.getViewers().isEmpty();
+    }
+    
+    public final void closeAllViews() {
+        closeAllViews(null);
+    }
+    
+    public final void dispose(MultiGuiDriver driver) {
+        dispose(driver, null);
+    }
+    
+    public final void updateInventory() {
+        for (HumanEntity viewer : inventory.getViewers()) {
+            if (viewer instanceof Player) {
+                ((Player) viewer).updateInventory();
+            }
+        }
+    }
+    
+    private boolean onSlotChange(InventoryInteractEvent event, int slot, ItemStack oldItem, ItemStack newItem) {
+        if (SpigotUtil.isItemPresent(oldItem) ? oldItem.equals(newItem) : !SpigotUtil.isItemPresent(newItem)) {
+            return Allow;
+        }
+        if (!allowSlotChange(event, slot, oldItem, newItem)) {
+            event.setCancelled(true);
+            return Deny;
+        }
+        return Allow;
+    }
+    
+    private void closeAllViews(HumanEntity closer) {
+        Collection<HumanEntity> viewers = inventory.getViewers();
+        for (HumanEntity viewer : viewers.toArray(new HumanEntity[viewers.size()])) {
+            if (viewer != closer) {
+                viewer.closeInventory();
+            }
+        }
+    }
+    
+    private void dispose(MultiGuiDriver driver, HumanEntity closer) {
+        onDispose();
+        driver.removeGui(this);
+        closeAllViews(closer);
+    }
+    
+    protected Inventory createInventory() {
+        return Bukkit.createInventory(null, 9);
+    }
+    
+    protected void refreshItems(Inventory inventory) {
+    
+    }
+    
+    protected void onInventoryOpen(InventoryOpenEvent event) {
+        if (inventory.getViewers().size() > maxViewers) {
+            event.setCancelled(true);
+        }
+    }
+    
+    protected void onInventoryClose(MultiGuiDriver driver, InventoryCloseEvent event) {
+        if (disposingOnClose && inventory.getViewers().size() <= 1) {
+            dispose(driver, event.getPlayer());
+        }
+    }
+    
+    protected void onInventoryClick(InventoryClickEvent event) {
+        if (event.getResult() == DENY) {
+            return;
+        }
+        
+        Inventory clicked = event.getClickedInventory();
+        if (clicked != event.getView().getTopInventory()) {
+            // they clicked in their own inventory
+            
+            if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+                ItemStack added = event.getCurrentItem();
+                if (!SpigotUtil.isItemPresent(added)) {
+                    return;
+                }
+                
+                Map<Integer, ItemStack> changes = deduceChangesIfItemAdded(getInventory(), added, computeNewItem);
+                for (Map.Entry<Integer, ItemStack> entry : changes.entrySet()) {
+                    if (!onSlotChange(event, entry.getKey(), getInventory().getItem(entry.getKey()), entry.getValue())) {
+                        break;
+                    }
+                }
+            }
+        } else {
+            // they clicked in the gui
+            
+            onSlotChange(event, event.getSlot(), clicked.getItem(event.getSlot()), computeNewItem ? getNewItem(event) : null);
+        }
+    }
+    
+    protected void onInventoryDrag(InventoryDragEvent event) {
+        Inventory inventory = this.inventory;
+        if (event.getInventory() != event.getView().getTopInventory()) {
+            return;
+        }
+        
+        Map<Integer, ItemStack> newItems = event.getNewItems();
+        InventoryView view = event.getView();
+        for (Map.Entry<Integer, ItemStack> entry : newItems.entrySet()) {
+            int slot = view.convertSlot(entry.getKey());
+            if (!onSlotChange(event, slot, inventory.getItem(slot), entry.getValue())) {
+                break;
+            }
+        }
+    }
+    
+    protected boolean allowSlotChange(InventoryInteractEvent event, int slot, ItemStack oldItem, ItemStack newItem) {
+        return Allow;
+    }
+    
+    protected void onDispose() {
+    
+    }
+
 }
