@@ -8,10 +8,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Projectile;
-import org.bukkit.entity.TNTPrimed;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -19,9 +16,9 @@ import org.bukkit.material.Attachable;
 import org.bukkit.material.MaterialData;
 import org.bukkit.projectiles.ProjectileSource;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class SpigotUtil {
     
@@ -41,7 +38,7 @@ public class SpigotUtil {
         
         World result = Bukkit.getWorld(input);
         if (result == null) {
-            input = input.toLowerCase().replace("_", "").replaceAll("-|_", "");
+            input = input.toLowerCase().replace("_", "").replaceAll("[-_]", "");
             for (World world : Bukkit.getWorlds()) {
                 if (world.getName().toLowerCase().equals(input)) {
                     result = world;
@@ -189,5 +186,165 @@ public class SpigotUtil {
     
         return null;
     }
+    
+    public static int xpForNextLevel(int currentLevel) {
+        if (currentLevel >= 30) {
+            return 112 + (currentLevel - 30) * 9;
+        }
+        
+        if (currentLevel >= 15) {
+            return 37 + (currentLevel - 15) * 5;
+        }
+        
+        return 7 + currentLevel * 2;
+    }
+    
+    public static int removeExp(Player entity, int xp) {
+        int total = entity.getTotalExperience();
+        if (xp > total) {
+            xp = total;
+        }
+        
+        int level = entity.getLevel();
+        if (level < 0) {
+            return 0;
+        }
+        
+        int removed = 0;
+        int xpForNextLevel = xpForNextLevel(level);
+        int current = (int) entity.getExp() * xpForNextLevel;
+        
+        if (xp > current) {
+            xp -= current;
+            total -= current;
+            removed += current;
+            
+            if (level == 0) {
+                entity.setExp(0F);
+                entity.setTotalExperience(total);
+                return removed;
+            }
+        } else {
+            current -= xp;
+            total -= xp;
+            removed += xp;
+            
+            entity.setExp((float) current / xpForNextLevel);
+            entity.setTotalExperience(total);
+            return removed;
+        }
+        
+        do {
+            xpForNextLevel = xpForNextLevel(--level);
+            if (xpForNextLevel >= xp) {
+                total -= xp;
+                removed += xp;
+                
+                entity.setExp(1F / xpForNextLevel * (xpForNextLevel - xp));
+                entity.setTotalExperience(total);
+                entity.setLevel(level);
+                return removed;
+            }
+            
+            xp -= xpForNextLevel;
+            total -= xpForNextLevel;
+            removed += xpForNextLevel;
+        } while (level > 0);
+        
+        entity.setExp(0F);
+        entity.setTotalExperience(0);
+        entity.setLevel(0);
+        return removed;
+    }
+    
+    public static int getNearbyPlayerCount(Player origin, double range, Predicate<Player> predicate) {
+        List<Entity> entities = origin.getNearbyEntities(range, range, range);
+        int result = 0;
+        for (Entity entity : entities) {
+            if (entity.getType() == EntityType.PLAYER && predicate.test((Player) entity)) {
+                result++;
+            }
+        }
+        return result;
+    }
+    
+    public static void getNearbyPlayers(Player origin, double range, Collection<Player> collection, Predicate<Player> predicate) {
+        List<Entity> entities = origin.getNearbyEntities(range, range, range);
+        for (Entity entity : entities) {
+            if (entity.getType() == EntityType.PLAYER && predicate.test((Player) entity)) {
+                collection.add((Player) entity);
+            }
+        }
+    }
+    
+    public static void forEachNearbyPlayer(Player origin, double range, Consumer<Player> action) {
+        List<Entity> entities = origin.getNearbyEntities(range, range, range);
+        for (Entity entity : entities) {
+            if (entity.getType() == EntityType.PLAYER) {
+                action.accept((Player) entity);
+            }
+        }
+    }
+    
+    public static double distanceSquared(Location first, Location second) {
+        double dx = first.getX() - second.getX();
+        double dy = first.getY() - second.getY();
+        double dz = first.getZ() - second.getZ();
+        
+        return dx * dx + dy * dy + dz * dz;
+    }
+    
+    
+    public static <T extends Entity> Iterator<T> findNearbyEntities(Entity origin, boolean includeSelf, Predicate<Entity> predicate, double horizontalRange, double verticalRange) {
+        Objects.requireNonNull(origin);
+        return new Iterator<T>() {
+            Entity next;
+            List<Entity> nearby;
+            int index = 0;
+            int size;
+            
+            {
+                if (includeSelf) {
+                    next = origin;
+                } else {
+                    next = findNext();
+                }
+            }
+            
+            Entity findNext() {
+                if (nearby == null) {
+                    nearby = origin.getNearbyEntities(horizontalRange, verticalRange, horizontalRange);
+                    size = nearby.size();
+                }
+                
+                while (index < size) {
+                    Entity e = nearby.get(index++);
+                    if (predicate.test(e)) {
+                        return e;
+                    }
+                }
+                
+                return null;
+            }
+            
+            @Override
+            public boolean hasNext() {
+                return next != null;
+            }
+            
+            @Override
+            public T next() {
+                if (next == null) {
+                    throw new NoSuchElementException();
+                }
+                Entity result = next;
+                next = findNext();
+                //noinspection unchecked
+                return (T) result;
+            }
+            
+        };
+    }
+    
     
 }
