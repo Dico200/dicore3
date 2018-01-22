@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.dico.dicore</groupId>
         <artifactId>dicore3</artifactId>
-        <version>1.0</version>
+        <version>1.0.1</version>
     </parent>
     <artifactId>dicore3-nms-v1_8_R3</artifactId>
     <version>1.0.1</version>
@@ -32,7 +32,7 @@
             <artifactId>server</artifactId>
             <version>v1_8_R3</version>
             <scope>system</scope>
-            <systemPath>D:/Resources/Java/minecraft/spigot-1.8.8.jar</systemPath>
+            <systemPath>/res/spigot-1.8.8.jar</systemPath>
         </dependency>
     </dependencies>
 

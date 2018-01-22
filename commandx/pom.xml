@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.dico.dicore</groupId>
         <artifactId>dicore3</artifactId>
-        <version>1.0</version>
+        <version>1.0.1</version>
     </parent>
     <artifactId>dicore3-commandx</artifactId>
     <packaging>jar</packaging>
