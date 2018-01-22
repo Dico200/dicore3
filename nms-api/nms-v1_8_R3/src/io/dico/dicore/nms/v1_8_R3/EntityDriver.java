@@ -3,15 +3,10 @@ package io.dico.dicore.nms.v1_8_R3;
 import io.dico.dicore.Reflection;
 import io.dico.dicore.nms.IEntityDriver;
 import net.minecraft.server.v1_8_R3.*;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftMonster;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_8_R3.entity.*;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
+import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
@@ -80,6 +75,12 @@ final class EntityDriver implements IEntityDriver {
     public void commencePlayerAttack(Player bukkitPlayer, Entity bukkitTarget) {
         EntityPlayer player = ((CraftPlayer) bukkitPlayer).getHandle();
         player.attack(((CraftEntity) bukkitTarget).getHandle());
+    }
+    
+    @Override
+    public void igniteCreeper(Creeper bukkitCreeper) {
+        EntityCreeper creeper = ((CraftCreeper) bukkitCreeper).getHandle();
+        creeper.co();
     }
     
 }

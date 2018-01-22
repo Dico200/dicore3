@@ -1,10 +1,7 @@
 package io.dico.dicore.nms;
 
 import org.bukkit.Material;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
@@ -61,19 +58,21 @@ public interface IEntityDriver {
     
     /**
      * Make the server believe the given monster attacked the entity
+     *
      * @return true? idk
      */
-    public boolean commenceMobAttack(Monster bukkitMonster, Entity bukkitTarget); /*{
-        EntityMonster monster = ((CraftMonster) bukkitMonster).getHandle();
-        return monster.r(((CraftEntity) bukkitTarget).getHandle());
-    }*/
+    boolean commenceMobAttack(Monster bukkitMonster, Entity bukkitTarget);
     
     /**
      * Make the server believe the given player attacked the entity
      */
-    public void commencePlayerAttack(Player bukkitPlayer, Entity bukkitTarget);/* {
-        EntityPlayer player = ((CraftPlayer) bukkitPlayer).getHandle();
-        player.attack(((CraftEntity) bukkitTarget).getHandle());
-    }*/
+    void commencePlayerAttack(Player bukkitPlayer, Entity bukkitTarget);
+    
+    /**
+     * Ignite a creeper such that it blows up
+     *
+     * @param creeper the creeper
+     */
+    void igniteCreeper(Creeper creeper);
     
 }
