@@ -2,6 +2,7 @@ package io.dico.dicore.nms;
 
 import io.dico.dicore.nbt.INbtMap;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.function.BiPredicate;
 
@@ -118,4 +119,23 @@ public interface IItemDriver {
      * @see #getTag(ItemStack)
      */
     ItemStack nmsMirror(ItemStack item);
+    
+    /**
+     * Apply the meta to the given item.
+     *
+     * @param item the item
+     * @param meta the meta
+     * @return the item if it is mirrored by nms, else a copy that is mirrored by nms
+     */
+    ItemStack addItemMeta(ItemStack item, ItemMeta meta);
+    
+    /**
+     * Update the reference of the map to the tag of the given item.
+     *
+     * @param map the map
+     * @param item the item
+     * @return true if the item is mirrored by nms and the reference was updated
+     */
+    boolean updateTagRef(INbtMap map, ItemStack item);
+    
 }

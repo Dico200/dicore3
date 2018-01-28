@@ -162,17 +162,35 @@ public final class Formatting implements CharSequence {
     }
     
     public static String translateChars(char alternateChar, String input) {
-        char[] result = new char[input.length()];
-        char previous = '\0';
-        int i = -1;
-        for (char c : input.toCharArray()) {
-            if (previous == alternateChar && isRecognizedChar(c)) {
-                result[i] = FORMAT_CHAR;
+        return translateFormat(alternateChar, FORMAT_CHAR, input);
+    }
+    
+    public static String revert(String input) {
+        return revertChars('&', input);
+    }
+    
+    public static String revertChars(char alternateChar, String input) {
+        return translateFormat(FORMAT_CHAR, alternateChar, input);
+    }
+    
+    public static String translateFormat(char fromChar, char toChar, String input) {
+        int n = input.length();
+        if (n < 2) {
+            return input;
+        }
+        char[] result = null;
+        char previous = input.charAt(0);
+        for (int i = 1; i < n; i++) {
+            char c = input.charAt(i);
+            if (previous == fromChar && isRecognizedChar(c)) {
+                if (result == null) {
+                    result = input.toCharArray();
+                }
+                result[i - 1] = toChar;
             }
-            result[i += 1] = c;
             previous = c;
         }
-        return String.valueOf(result);
+        return result == null ? input : String.valueOf(result);
     }
     
     private static boolean isRecognizedChar(char c) {

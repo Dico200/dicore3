@@ -5,13 +5,23 @@ import io.dico.dicore.nbt.INbtMap;
 import io.dico.dicore.nms.IItemDriver;
 import net.minecraft.server.v1_8_R3.Blocks;
 import net.minecraft.server.v1_8_R3.NBTTagCompound;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Objects;
 
 final class ItemDriver implements IItemDriver {
     private static final Field itemHandleField = Reflection.restrictedSearchField(CraftItemStack.class, "handle");
+    private static final Method applyToItemMethod = Reflection.restrictedSearchMethod(
+            Bukkit.getItemFactory().getItemMeta(Material.STONE).getClass(),
+            "applyToItem",
+            NBTTagCompound.class);
     
     static net.minecraft.server.v1_8_R3.ItemStack getPresentHandle(CraftItemStack item) {
         net.minecraft.server.v1_8_R3.ItemStack result = Reflection.getFieldValue(itemHandleField, item);
@@ -73,6 +83,46 @@ final class ItemDriver implements IItemDriver {
     @Override
     public ItemStack nmsMirror(ItemStack item) {
         return ensureHandlePresent(item);
+    }
+    
+    @Override
+    public ItemStack addItemMeta(ItemStack item, ItemMeta meta) {
+        Objects.requireNonNull(meta);
+        net.minecraft.server.v1_8_R3.ItemStack handle = getPresentHandle((CraftItemStack) (item = ensureHandlePresent(item)));
+        NBTTagCompound tag = handle.getTag();
+        if (tag == null) {
+            handle.setTag(tag = new NBTTagCompound());
+        }
+    
+        try {
+            // virtual invoke
+            applyToItemMethod.invoke(meta, tag);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    
+        return item;
+    }
+    
+    @Override
+    public boolean updateTagRef(INbtMap map, ItemStack item) {
+        Objects.requireNonNull(map);
+        if (!(item instanceof CraftItemStack)) {
+            return false;
+        }
+        
+        if (!map.isWrapper()) {
+            return false;
+        }
+        
+        net.minecraft.server.v1_8_R3.ItemStack handle = getPresentHandle((CraftItemStack) item);
+        NBTTagCompound tag = handle.getTag();
+        if (tag == null) {
+            handle.setTag(tag = new NBTTagCompound());
+        }
+    
+        ((WrappedNbtMap) map).setDelegate(tag);
+        return true;
     }
     
 }

@@ -12,6 +12,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.inventory.Inventory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,6 +44,12 @@ public class MultiGuiDriver implements Listener {
         rv = rv.withElement(registrator.makeListenerHandle(InventoryCloseEvent.class, HIGHEST, false, this::onInventoryClose));
         rv = rv.withElement(registrator.makeListenerHandle(InventoryOpenEvent.class, HIGHEST, false, this::onInventoryOpen));
         return rv;
+    }
+    
+    public void closeAllGuis() {
+        for (MultiGui gui : new ArrayList<>(guis.values())) {
+            gui.dispose(this);
+        }
     }
     
     @EventHandler(priority = HIGHEST)

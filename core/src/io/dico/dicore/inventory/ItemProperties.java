@@ -2,21 +2,24 @@ package io.dico.dicore.inventory;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import io.dico.dicore.Formatting;
 import io.dico.dicore.serialization.JsonLoadable;
 import io.dico.dicore.serialization.JsonUtil;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Save and load {@link ItemStack} in json format
  * Any additional NBT data not included by {@link ItemMeta} is discarded.
  */
+@SuppressWarnings({"UnusedReturnValue", "StringEquality"})
 public class ItemProperties implements JsonLoadable {
     private int id;
     private byte data;
@@ -25,36 +28,46 @@ public class ItemProperties implements JsonLoadable {
     private List<String> lore;
     private String displayName;
     private boolean unbreakable;
+    private transient boolean translateColorsEnabled;
     
     public ItemProperties() {
     }
     
+    public ItemProperties(boolean translateColorsEnabled) {
+        this.translateColorsEnabled = translateColorsEnabled;
+    }
+    
     public ItemProperties(ItemStack item) {
-        id = item.getTypeId();
-        data = item.getData().getData();
-        amount = item.getAmount();
-        enchantments = new HashMap<>();
-        
-        ItemMeta meta = StorageForwardingMeta.ensureNotStored(item.getItemMeta());
-        if (meta.hasEnchants()) {
-            enchantments.putAll(meta.getEnchants());
+        loadFrom(item);
+    }
+    
+    public ItemProperties(ItemStack item, boolean translateColorsEnabled) {
+        this.translateColorsEnabled = translateColorsEnabled;
+        loadFrom(item);
+    }
+    
+    public ItemStack toItemStack(ItemStack ref) {
+        if (ref == null) {
+            return toItemStack();
         }
         
-        if (meta.hasLore()) {
-            lore = meta.getLore();
-        }
-        
-        if (meta.hasDisplayName()) {
-            displayName = meta.getDisplayName();
-        }
-        
-        unbreakable = meta.spigot().isUnbreakable();
+        ref.setTypeId(id);
+        ref.setAmount(amount);
+        ref.setDurability(data);
+        ref.setItemMeta(makeMeta());
+        return ref;
     }
     
     public ItemStack toItemStack() {
         ItemStack result = new ItemStack(id, amount, data);
+        result.setItemMeta(makeMeta());
+        return result;
+    }
+    
+    private ItemMeta makeMeta() {
+        ItemMeta originalMeta = Bukkit.getItemFactory().getItemMeta(getType());
+        ItemMeta meta = StorageForwardingMeta.ensureNotStored(originalMeta);
         
-        ItemMeta meta = StorageForwardingMeta.ensureNotStored(result.getItemMeta());
         if (enchantments != null) {
             for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
                 meta.addEnchant(entry.getKey(), entry.getValue(), true);
@@ -71,8 +84,7 @@ public class ItemProperties implements JsonLoadable {
         
         meta.spigot().setUnbreakable(unbreakable);
         
-        result.setItemMeta(StorageForwardingMeta.toOriginal(meta));
-        return result;
+        return originalMeta;
     }
     
     @Override
@@ -84,7 +96,8 @@ public class ItemProperties implements JsonLoadable {
         writer.name("amount").value(amount);
         
         if (displayName != null) {
-            writer.name("displayName").value(displayName);
+            writer.name("displayName");
+            writer.value(getDisplayNameInConfig());
         }
         
         if (enchantments != null) {
@@ -92,7 +105,7 @@ public class ItemProperties implements JsonLoadable {
             Map<Enchantment, Integer> enchantments = this.enchantments;
             Map<String, Integer> stringKeys = new HashMap<>(enchantments.size());
             for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
-                stringKeys.put(entry.getKey().getName(), entry.getValue().intValue());
+                stringKeys.put(entry.getKey().getName(), entry.getValue());
             }
             
             JsonUtil.insert(writer, stringKeys);
@@ -100,7 +113,7 @@ public class ItemProperties implements JsonLoadable {
         
         if (lore != null) {
             writer.name("lore");
-            JsonUtil.insert(writer, lore);
+            JsonUtil.insert(writer, getLoreInConfig());
         }
         
         if (unbreakable) {
@@ -115,7 +128,7 @@ public class ItemProperties implements JsonLoadable {
         map.put("data", data + "");
         map.put("amount", amount + "");
         if (displayName != null) {
-            map.put("displayName", displayName);
+            map.put("displayName", getDisplayNameInConfig());
         }
         if (enchantments != null) {
             Map<Enchantment, Integer> enchantments = this.enchantments;
@@ -126,7 +139,7 @@ public class ItemProperties implements JsonLoadable {
             map.put("enchantments", stringKeys);
         }
         if (lore != null) {
-            map.put("lore", lore);
+            map.put("lore", getLoreInConfig());
         }
         if (unbreakable) {
             map.put("unbreakable", true);
@@ -158,12 +171,12 @@ public class ItemProperties implements JsonLoadable {
                     } else if (!enchantments.isEmpty()) {
                         enchantments.clear();
                     }
-                    Map<String, Double> read = (Map<String, Double>) JsonUtil.read(reader);
+                    Map<String, Object> read = (Map<String, Object>) JsonUtil.read(reader);
                     if (read != null) {
-                        for (Map.Entry<String, Double> entry : read.entrySet()) {
+                        for (Map.Entry<String, Object> entry : read.entrySet()) {
                             Enchantment ench = Enchantment.getByName(entry.getKey());
                             if (ench != null) {
-                                int level = entry.getValue().intValue();
+                                int level = toInt(entry.getValue(), 1);
                                 enchantments.put(ench, level);
                             }
                         }
@@ -171,15 +184,32 @@ public class ItemProperties implements JsonLoadable {
                     break;
                 }
                 case "lore":
-                    lore = (List<String>) JsonUtil.read(reader);
+                    setLoreFromConfig((List<String>) JsonUtil.read(reader));
                     break;
                 case "displayName":
-                    displayName = reader.nextString();
+                    setDisplayNameFromConfig(reader.nextString());
+                    break;
                 default:
                     reader.skipValue();
             }
         }
         reader.endObject();
+    }
+    
+    private static Map<String, Object> toMap(Object object) {
+        //noinspection unchecked
+        return object instanceof ConfigurationSection ? ((ConfigurationSection) object).getValues(false) : (Map<String, Object>) object;
+    }
+    
+    private static int toInt(Object object, int def) {
+        if (object instanceof Number) {
+            return ((Number) object).intValue();
+        }
+        try {
+            return Integer.parseInt(Objects.toString(object));
+        } catch (IllegalArgumentException ex) {
+            return def;
+        }
     }
     
     public ItemProperties loadFrom(Map<String, Object> map) {
@@ -204,13 +234,14 @@ public class ItemProperties implements JsonLoadable {
                     } else if (!enchantments.isEmpty()) {
                         enchantments.clear();
                     }
+                    
                     //noinspection unchecked
-                    Map<String, Integer> stringKeys = (Map<String, Integer>) entry.getValue();
-                    if (stringKeys != null) {
-                        for (Map.Entry<String, Integer> entry2 : stringKeys.entrySet()) {
+                    Map<String, Object> enchantmentKeys = toMap(entry.getValue());
+                    if (enchantmentKeys != null) {
+                        for (Map.Entry<String, Object> entry2 : enchantmentKeys.entrySet()) {
                             Enchantment ench = Enchantment.getByName(entry2.getKey());
                             if (ench != null) {
-                                enchantments.put(ench, entry2.getValue());
+                                enchantments.put(ench, toInt(entry2.getValue(), 1));
                             }
                         }
                     }
@@ -218,13 +249,37 @@ public class ItemProperties implements JsonLoadable {
                 }
                 case "lore":
                     //noinspection unchecked
-                    lore = (List<String>) entry.getValue();
+                    setLoreFromConfig((List<String>) entry.getValue());
                     break;
                 case "displayName":
-                    displayName = (String) entry.getValue();
+                    setDisplayNameFromConfig((String) entry.getValue());
+                    break;
                 default:
             }
         }
+        return this;
+    }
+    
+    public ItemProperties loadFrom(ItemStack item) {
+        id = item.getTypeId();
+        data = item.getData().getData();
+        amount = item.getAmount();
+        enchantments = new HashMap<>();
+        
+        ItemMeta meta = StorageForwardingMeta.ensureNotStored(item.getItemMeta());
+        if (meta.hasEnchants()) {
+            enchantments.putAll(meta.getEnchants());
+        }
+        
+        if (meta.hasLore()) {
+            lore = meta.getLore();
+        }
+        
+        if (meta.hasDisplayName()) {
+            displayName = meta.getDisplayName();
+        }
+        
+        unbreakable = meta.spigot().isUnbreakable();
         return this;
     }
     
@@ -234,6 +289,16 @@ public class ItemProperties implements JsonLoadable {
     
     public ItemProperties setId(int id) {
         this.id = id;
+        return this;
+    }
+    
+    public Material getType() {
+        Material rv = Material.getMaterial(id);
+        return rv == null ? Material.AIR : rv;
+    }
+    
+    public ItemProperties setType(Material type) {
+        this.id = type == null ? 0 : type.getId();
         return this;
     }
     
@@ -268,8 +333,22 @@ public class ItemProperties implements JsonLoadable {
         return lore;
     }
     
+    public List<String> getLoreInConfig() {
+        List<String> rv = new ArrayList<>(lore);
+        if (translateColorsEnabled) {
+            setColorCharAbsent(rv);
+        }
+        return rv;
+    }
+    
     public ItemProperties setLore(List<String> lore) {
         this.lore = lore;
+        return this;
+    }
+    
+    public ItemProperties setLoreFromConfig(List<String> lore) {
+        this.lore = new ArrayList<>(lore);
+        setColorCharPresent(this.lore);
         return this;
     }
     
@@ -277,8 +356,17 @@ public class ItemProperties implements JsonLoadable {
         return displayName;
     }
     
+    public String getDisplayNameInConfig() {
+        return translateColorsEnabled ? Formatting.revert(displayName) : displayName;
+    }
+    
     public ItemProperties setDisplayName(String displayName) {
         this.displayName = displayName;
+        return this;
+    }
+    
+    public ItemProperties setDisplayNameFromConfig(String displayName) {
+        this.displayName = translateColorsEnabled ? Formatting.translate(displayName) : displayName;
         return this;
     }
     
@@ -289,6 +377,35 @@ public class ItemProperties implements JsonLoadable {
     public ItemProperties setUnbreakable(boolean unbreakable) {
         this.unbreakable = unbreakable;
         return this;
+    }
+    
+    public boolean isTranslateColorsEnabled() {
+        return translateColorsEnabled;
+    }
+    
+    public ItemProperties setTranslateColorsEnabled(boolean translateColors) {
+        this.translateColorsEnabled = translateColors;
+        return this;
+    }
+    
+    private static void setColorCharPresent(List<String> list) {
+        ListIterator<String> iterator = list.listIterator();
+        while (iterator.hasNext()) {
+            String element = iterator.next();
+            if (element != null && element != (element = Formatting.translate(element))) {
+                iterator.set(element);
+            }
+        }
+    }
+    
+    private static void setColorCharAbsent(List<String> list) {
+        ListIterator<String> iterator = list.listIterator();
+        while (iterator.hasNext()) {
+            String element = iterator.next();
+            if (element != null && element != (element = Formatting.revert(element))) {
+                iterator.set(element);
+            }
+        }
     }
     
 }

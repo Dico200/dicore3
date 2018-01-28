@@ -13,12 +13,16 @@ import java.util.function.Supplier;
 // don't extend AbstractMap because of the field overhead of its keySet and values fields.
 final class WrappedNbtMap implements INbtMap {
     private static final Field compoundMapField = Reflection.restrictedSearchField(NBTTagCompound.class, "map");
-    final NBTTagCompound delegate;
-    private final Map<String, NBTBase> map;
+    NBTTagCompound delegate;
+    Map<String, NBTBase> map;
     
     WrappedNbtMap(NBTTagCompound delegate) {
+        setDelegate(delegate);
+    }
+    
+    void setDelegate(NBTTagCompound delegate) {
         this.delegate = Objects.requireNonNull(delegate);
-        
+    
         Map<String, NBTBase> map = Reflection.getFieldValue(compoundMapField, delegate);
         if (map == null) {
             Reflection.setFieldValue(compoundMapField, delegate, map = new HashMap<>());

@@ -8,32 +8,17 @@
         <artifactId>dicore3</artifactId>
         <version>1.0.1</version>
     </parent>
-    <artifactId>dicore3-nms-v1_8_R3</artifactId>
+    <artifactId>dicore3-factions-api</artifactId>
     <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>io.dico.dicore</groupId>
-            <artifactId>dicore3-nms-api</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.dico.dicore</groupId>
             <artifactId>dicore3-core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-
-        <dependency>
-            <groupId>net.minecraft.server</groupId>
-            <artifactId>server</artifactId>
-            <version>v1_8_R3</version>
-            <scope>system</scope>
-            <systemPath>D:/Resources/Java/minecraft/spigot-1.8.8.jar</systemPath>
-        </dependency>
     </dependencies>
-
+    
 </project>
