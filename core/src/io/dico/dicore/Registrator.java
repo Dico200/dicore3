@@ -1,5 +1,6 @@
 package io.dico.dicore;
 
+import io.dico.dicore.event.ChainedListenerHandle;
 import io.dico.dicore.event.ChainedListenerHandles;
 import io.dico.dicore.event.ListenerHandle;
 import org.bukkit.Server;
@@ -13,7 +14,11 @@ import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 
-import java.lang.reflect.Method;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -259,7 +264,7 @@ public final class Registrator {
             if (stackTrace.length > 0) {
                 String className = Registrator.class.getName();
                 for (StackTraceElement element : stackTrace) {
-                    if (!element.getClassName().equals(className)) {
+                    if (!element.getClassName().equals(className) && !element.getClassName().startsWith("java.lang")) {
                         caller = element;
                         break;
                     }
@@ -444,6 +449,94 @@ public final class Registrator {
         return this;
     }
     
+    @SuppressWarnings("unchecked")
+    private Collection<ListenerFieldInfo> getListenerFields(Class<?> clazz, Object instance) {
+        Collection<ListenerFieldInfo> rv = new ArrayList<>();
+        
+        Field[] fields = clazz.getDeclaredFields();
+        boolean isStatic = instance == null;
+        if (!isStatic && !clazz.isInstance(instance)) {
+            throw new IllegalArgumentException("Instance must be an instance of the given class");
+        }
+        
+        for (Field f : fields) {
+            if (isStatic != Modifier.isStatic(f.getModifiers())
+                    || f.getType() != IEventListener.class
+                    || !(f.getGenericType() instanceof ParameterizedType)
+                    || !f.isAnnotationPresent(ListenerInfo.class)) {
+                continue;
+            }
+            
+            ParameterizedType pt = (ParameterizedType) f.getGenericType();
+            Type[] typeArgs = pt.getActualTypeArguments();
+            if (typeArgs.length != 1) {
+                continue;
+            }
+            
+            Type eventType = typeArgs[0];
+            if (eventType == null || !(eventType instanceof Class)) {
+                continue;
+            }
+            
+            Consumer<? super Event> lambda;
+            try {
+                f.setAccessible(true);
+                lambda = (Consumer<? super Event>) f.get(instance);
+            } catch (IllegalArgumentException | IllegalAccessException | ClassCastException e) {
+                continue;
+            }
+    
+            Class<? extends Event> baseEventClass = (Class<? extends Event>) eventType;
+    
+            ListenerInfo anno = f.getAnnotation(ListenerInfo.class);
+            String[] eventClassNames = anno.events();
+            if (eventClassNames.length > 0) {
+                
+                for (String eventClassName : eventClassNames) {
+                    Class<? extends Event> eventClass = getEventClassByName(eventClassName);
+                    if (eventClass != null && baseEventClass.isAssignableFrom(eventClass)) {
+                        rv.add(new ListenerFieldInfo(eventClass, lambda, anno));
+                    }
+                }
+                
+            } else {
+                rv.add(new ListenerFieldInfo(baseEventClass, lambda, anno));
+            }
+        }
+        return rv;
+    }
+    
+    public Registrator registerListeners(Class<?> clazz, Object instance) {
+        for (ListenerFieldInfo fieldInfo : getListenerFields(clazz, instance)) {
+            registerListener(fieldInfo.eventClass, fieldInfo.anno.priority(), fieldInfo.anno.ignoreCancelled(), fieldInfo.lambda);
+        }
+        return this;
+    }
+    
+    public Registrator registerListeners(Class<?> clazz) {
+        return registerListeners(clazz, null);
+    }
+    
+    public Registrator registerListeners(Object instance) {
+        return registerListeners(instance.getClass(), instance);
+    }
+    
+    public ChainedListenerHandle makeChainedListenerHandle(Class<?> clazz, Object instance) {
+        ChainedListenerHandle rv = ChainedListenerHandles.empty();
+        for (ListenerFieldInfo fieldInfo : getListenerFields(clazz, instance)) {
+            rv = rv.withElement(makeListenerHandle(fieldInfo.eventClass, fieldInfo.anno.priority(), fieldInfo.anno.ignoreCancelled(), fieldInfo.lambda));
+        }
+        return rv;
+    }
+    
+    public ChainedListenerHandle makeChainedListenerHandle(Class<?> clazz) {
+        return makeChainedListenerHandle(clazz, null);
+    }
+    
+    public ChainedListenerHandle makeChainedListenerHandle(Object instance) {
+        return makeChainedListenerHandle(instance.getClass(), instance);
+    }
+    
     public ListenerHandle makePlayerQuitListenerHandle(Consumer<? super PlayerEvent> handler) {
         ListenerHandle first = makeListenerHandle(PlayerQuitEvent.class, EventPriority.NORMAL, handler);
         ListenerHandle second = makeListenerHandle(PlayerKickEvent.class, EventPriority.NORMAL, handler);
@@ -455,7 +548,33 @@ public final class Registrator {
         return registerListener(PlayerKickEvent.class, EventPriority.NORMAL, handler);
     }
     
+    private static Class<? extends Event> getEventClassByName(String name) {
+        try {
+            //noinspection unchecked
+            return (Class<? extends Event>) Class.forName("org.bukkit.event." + name);
+        } catch (ClassNotFoundException | ClassCastException e) {
+            return null;
+        }
+    }
+    
+    public interface IEventListener<T extends Event> extends Consumer<T> {
+        @Override
+        void accept(T event);
+    }
+    
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface ListenerInfo {
+        
+        String[] events() default {};
+        
+        EventPriority priority() default EventPriority.HIGHEST;
+        
+        boolean ignoreCancelled() default true;
+    }
+    
     public static class Registration extends RegisteredListener {
+        
         private final EventExecutor executor;
         private final Class<?> eventClass;
         private final StackTraceElement caller;
@@ -518,12 +637,12 @@ public final class Registrator {
         RegistrationWithHandle(Class<?> eventClass, StackTraceElement caller, EventExecutor executor, EventPriority priority, Plugin plugin, boolean ignoreCancelled) {
             super(eventClass, caller, executor, priority, plugin, ignoreCancelled);
         }
-    
+        
         @Override
         public void register() {
             super.register();
         }
-    
+        
         @Override
         public void unregister() {
             super.unregister();
@@ -540,6 +659,18 @@ public final class Registrator {
         HandlerListInfo(HandlerList handlerList, boolean requiresFilter) {
             this.handlerList = handlerList;
             this.requiresFilter = requiresFilter;
+        }
+    }
+    
+    private static final class ListenerFieldInfo {
+        final Class<? extends Event> eventClass;
+        final Consumer<? super Event> lambda;
+        final ListenerInfo anno;
+        
+        ListenerFieldInfo(Class<? extends Event> eventClass, Consumer<? super Event> lambda, ListenerInfo anno) {
+            this.eventClass = eventClass;
+            this.lambda = lambda;
+            this.anno = anno;
         }
     }
     
@@ -651,4 +782,34 @@ public final class Registrator {
             return this == obj;
         }
     }
+    
+    @Override
+    public String toString() {
+        return "Registrator{" +
+                "plugin: " + plugin +
+                ", enabled: " + enabled +
+                ", registrations: " + registrations.size() +
+                '}';
+    }
+    
+    public String toStringWithAllRegistrations() {
+        StringBuilder sb = new StringBuilder("Registrator {");
+        sb.append("\n  plugin: ").append(plugin);
+        sb.append("\n  enabled: ").append(enabled);
+        sb.append("\n  registrations: [");
+        
+        Iterator<Registration> iterator = registrations.iterator();
+        if (iterator.hasNext()) {
+            sb.append("\n    ").append(iterator.next().toString());
+        }
+        while (iterator.hasNext()) {
+            sb.append(',').append("\n    ").append(iterator.next().toString());
+        }
+        if (!registrations.isEmpty()) {
+            sb.append("\n  ");
+        }
+        sb.append("]\n}");
+        return sb.toString();
+    }
+    
 }

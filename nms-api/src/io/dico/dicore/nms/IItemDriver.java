@@ -1,6 +1,7 @@
 package io.dico.dicore.nms;
 
 import io.dico.dicore.nbt.INbtMap;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -8,11 +9,11 @@ import java.util.function.BiPredicate;
 
 /**
  * This interface contains methods that query and modify {@link org.bukkit.inventory.ItemStack items}
- *
+ * <p>
  * An instance of this interface can be retrieved from {@link NmsFactory#getItemDriver()}
  */
 public interface IItemDriver {
-
+    
     /**
      * Set the {@link INbtMap} tag of {@code item}
      *
@@ -22,7 +23,7 @@ public interface IItemDriver {
      * @throws NullPointerException if item is null
      */
     ItemStack setTag(ItemStack item, INbtMap tag);
-
+    
     /**
      * Gets the {@link INbtMap} tag of {@code item}
      * <p>
@@ -59,7 +60,7 @@ public interface IItemDriver {
      * @throws NullPointerException if item is null
      */
     INbtMap getTag(ItemStack item);
-
+    
     /**
      * Explores the {@link INbtMap} tag of {@code item.
      *
@@ -82,7 +83,7 @@ public interface IItemDriver {
         explorer.test(item, map);
         return item;
     }
-
+    
     /**
      * Sets a single element of {@code item}'s nbt data.
      * <p>
@@ -96,7 +97,7 @@ public interface IItemDriver {
      * @see #getNBTElement
      */
     ItemStack setNBTElement(ItemStack item, String key, Object value);
-
+    
     /**
      * Gets a single element of {@code item}'s nbt data.
      *
@@ -106,7 +107,7 @@ public interface IItemDriver {
      * @see #setNBTElement
      */
     Object getNBTElement(ItemStack item, String key);
-
+    
     /**
      * Returns an item that is guaranteed to be a nmsMirror of an nms item stack.
      * <p>
@@ -132,10 +133,27 @@ public interface IItemDriver {
     /**
      * Update the reference of the map to the tag of the given item.
      *
-     * @param map the map
+     * @param map  the map
      * @param item the item
      * @return true if the item is mirrored by nms and the reference was updated
      */
     boolean updateTagRef(INbtMap map, ItemStack item);
+    
+    /**
+     * Update the reference of the item to the tag of the map.
+     *
+     * @param item the item
+     * @param map  the map
+     * @return true if the item is mirrored by nms and the reference was updated
+     */
+    boolean updateItemRef(ItemStack item, INbtMap map);
+    
+    /**
+     * Set the type of the item internally, without calling unnecessary methods or wiping nbt data
+     *
+     * @param item the item
+     * @param type the type
+     */
+    void setType(ItemStack item, Material type);
     
 }

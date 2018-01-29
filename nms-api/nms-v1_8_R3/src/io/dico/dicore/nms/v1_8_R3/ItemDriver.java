@@ -8,6 +8,7 @@ import net.minecraft.server.v1_8_R3.NBTTagCompound;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_8_R3.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -123,6 +124,33 @@ final class ItemDriver implements IItemDriver {
     
         ((WrappedNbtMap) map).setDelegate(tag);
         return true;
+    }
+    
+    @Override
+    public boolean updateItemRef(ItemStack item, INbtMap map) {
+        Objects.requireNonNull(map);
+        if (!(item instanceof CraftItemStack)) {
+            return false;
+        }
+    
+        if (!map.isWrapper()) {
+            return false;
+        }
+    
+        net.minecraft.server.v1_8_R3.ItemStack handle = getPresentHandle((CraftItemStack) item);
+        handle.setTag(((WrappedNbtMap) map).delegate);
+        return true;
+    }
+    
+    @Override
+    public void setType(ItemStack item, Material type) {
+        if (!(item instanceof CraftItemStack)) {
+            item.setType(type);
+            return;
+        }
+    
+        net.minecraft.server.v1_8_R3.ItemStack handle = getPresentHandle((CraftItemStack) item);
+        handle.setItem(CraftMagicNumbers.getItem(type));
     }
     
 }
