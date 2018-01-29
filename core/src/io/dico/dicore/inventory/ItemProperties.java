@@ -22,7 +22,7 @@ import java.util.*;
 @SuppressWarnings({"UnusedReturnValue", "StringEquality"})
 public class ItemProperties implements JsonLoadable {
     private int id;
-    private byte data;
+    private short data;
     private int amount;
     private Map<Enchantment, Integer> enchantments;
     private List<String> lore;
@@ -65,7 +65,12 @@ public class ItemProperties implements JsonLoadable {
     }
     
     private ItemMeta makeMeta() {
-        ItemMeta originalMeta = Bukkit.getItemFactory().getItemMeta(getType());
+        Material type = getType();
+        if (type == null || type == Material.AIR) {
+            return null;
+        }
+        
+        ItemMeta originalMeta = Bukkit.getItemFactory().getItemMeta(type);
         ItemMeta meta = StorageForwardingMeta.ensureNotStored(originalMeta);
         
         if (enchantments != null) {
@@ -124,9 +129,9 @@ public class ItemProperties implements JsonLoadable {
     }
     
     public void writeTo(Map<String, Object> map) {
-        map.put("id", id + "");
-        map.put("data", data + "");
-        map.put("amount", amount + "");
+        map.put("id", id);
+        map.put("data", data);
+        map.put("amount", amount);
         if (displayName != null) {
             map.put("displayName", getDisplayNameInConfig());
         }
@@ -217,13 +222,13 @@ public class ItemProperties implements JsonLoadable {
             final String key = entry.getKey();
             switch (key) {
                 case "id":
-                    id = Integer.parseInt((String) entry.getValue());
+                    id = toInt(entry.getValue(), 0);
                     break;
                 case "data":
-                    data = Byte.parseByte((String) entry.getValue());
+                    data = (byte) toInt(entry.getValue(), 0);
                     break;
                 case "amount":
-                    amount = Integer.parseInt((String) entry.getValue());
+                    amount = toInt(entry.getValue(), 1);
                     break;
                 case "unbreakable":
                     unbreakable = (boolean) entry.getValue();
@@ -262,24 +267,26 @@ public class ItemProperties implements JsonLoadable {
     
     public ItemProperties loadFrom(ItemStack item) {
         id = item.getTypeId();
-        data = item.getData().getData();
+        data = item.getDurability();
         amount = item.getAmount();
         enchantments = new HashMap<>();
         
         ItemMeta meta = StorageForwardingMeta.ensureNotStored(item.getItemMeta());
-        if (meta.hasEnchants()) {
-            enchantments.putAll(meta.getEnchants());
+        if (meta != null) {
+            if (meta.hasEnchants()) {
+                enchantments.putAll(meta.getEnchants());
+            }
+            
+            if (meta.hasLore()) {
+                lore = meta.getLore();
+            }
+            
+            if (meta.hasDisplayName()) {
+                displayName = meta.getDisplayName();
+            }
+            
+            unbreakable = meta.spigot().isUnbreakable();
         }
-        
-        if (meta.hasLore()) {
-            lore = meta.getLore();
-        }
-        
-        if (meta.hasDisplayName()) {
-            displayName = meta.getDisplayName();
-        }
-        
-        unbreakable = meta.spigot().isUnbreakable();
         return this;
     }
     
@@ -302,7 +309,7 @@ public class ItemProperties implements JsonLoadable {
         return this;
     }
     
-    public byte getData() {
+    public short getData() {
         return data;
     }
     

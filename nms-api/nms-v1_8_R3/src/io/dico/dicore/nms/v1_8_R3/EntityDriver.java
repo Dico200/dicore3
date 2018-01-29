@@ -83,4 +83,18 @@ final class EntityDriver implements IEntityDriver {
         creeper.co();
     }
     
+    @Override
+    public boolean isAiDisabled(LivingEntity entity) {
+        EntityLiving el = ((CraftLivingEntity) entity).getHandle();
+        return el instanceof EntityInsentient && ((EntityInsentient) el).ce();
+    }
+    
+    @Override
+    public void setAiDisabled(LivingEntity entity, boolean disabled) {
+        EntityLiving el = ((CraftLivingEntity) entity).getHandle();
+        if (el instanceof EntityInsentient) {
+            ((EntityInsentient) el).k(disabled);
+        }
+    }
+    
 }

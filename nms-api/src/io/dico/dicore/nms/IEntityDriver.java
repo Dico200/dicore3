@@ -75,4 +75,18 @@ public interface IEntityDriver {
      */
     void igniteCreeper(Creeper creeper);
     
+    /**
+     * @param entity a living entity
+     * @return true if the entity's AI has been disabled
+     */
+    boolean isAiDisabled(LivingEntity entity);
+    
+    /**
+     * @param entity a living entity
+     * @param disabled true if the entity's AI should be disabled, false if it should be enabled
+     */
+    void setAiDisabled(LivingEntity entity, boolean disabled);
+    
+    
+    
 }
