@@ -282,16 +282,7 @@ public final class Registrator {
      * @return this
      */
     public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, Consumer<? super T> handler) {
-        Registration listener = createRegistration(true, true, priority, ignoreCancelled, eventClass, handler);
-        /*
-        Below code is disabled because the returned listener handle is not managed.
-        registrations.add(listener);
-        
-        if (enabled) {
-            listener.register();
-        }
-        */
-        return (ListenerHandle) listener;
+        return (ListenerHandle) createRegistration(true, priority, ignoreCancelled, eventClass, handler);
     }
     
     /**
@@ -350,11 +341,7 @@ public final class Registrator {
      * @return this
      */
     public <T extends Event> Registrator registerListener(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, Consumer<? super T> handler) {
-        Registration listener = createRegistration(true, false, priority, ignoreCancelled, eventClass, handler);
-        registrations.add(listener);
-        if (enabled) {
-            listener.register();
-        }
+        registerListener(createRegistration(false, priority, ignoreCancelled, eventClass, handler));
         return this;
     }
     
@@ -534,12 +521,12 @@ public final class Registrator {
             if (pluginEnableListener != null) {
                 pluginEnableListener = pluginEnableListener.setPlugin(plugin);
             } else {
-                pluginEnableListener = createRegistration(false, false, EventPriority.NORMAL, false, PluginEnableEvent.class, this::onPluginEnable);
+                pluginEnableListener = createRegistration(null, false, EventPriority.NORMAL, false, PluginEnableEvent.class, this::onPluginEnable);
             }
             if (pluginDisableListener != null) {
                 pluginDisableListener = pluginDisableListener.setPlugin(plugin);
             } else {
-                pluginDisableListener = createRegistration(false, false, EventPriority.NORMAL, false, PluginDisableEvent.class, this::onPluginDisable);
+                pluginDisableListener = createRegistration(null, false, EventPriority.NORMAL, false, PluginDisableEvent.class, this::onPluginDisable);
             }
         }
     }
@@ -590,25 +577,30 @@ public final class Registrator {
         }
     }
     
-    private <T extends Event> Registration createRegistration(boolean findCaller,
-                                                              boolean asHandle,
+    private void registerListener(Registration registration) {
+        registrations.add(registration);
+        if (enabled) {
+            registration.register();
+        }
+    }
+    
+    private <T extends Event> Registration createRegistration(boolean asHandle,
                                                               EventPriority priority,
                                                               boolean ignoreCancelled,
                                                               Class<T> eventClass,
                                                               Consumer<? super T> handler) {
         StackTraceElement caller = null;
-        if (findCaller) {
-            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-            if (stackTrace.length > 0) {
-                String className = Registrator.class.getName();
-                for (StackTraceElement element : stackTrace) {
-                    if (!element.getClassName().equals(className) && !element.getClassName().startsWith("java.lang")) {
-                        caller = element;
-                        break;
-                    }
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        if (stackTrace.length > 0) {
+            String className = Registrator.class.getName();
+            for (StackTraceElement element : stackTrace) {
+                if (!element.getClassName().equals(className) && !element.getClassName().startsWith("java.lang")) {
+                    caller = element;
+                    break;
                 }
             }
         }
+        
         return createRegistration(caller, asHandle, priority, ignoreCancelled, eventClass, handler);
     }
     
