@@ -37,7 +37,7 @@ import java.util.function.Consumer;
  * Because it does not use reflection to call the event handlers.
  *
  * @implNote This class uses only one {@link Listener listener object} across all its instances, by fooling spigot into
- * thinking they're all distinct ones (in other words, by violating the {@link Object#equals(Object)} contract).
+ * thinking they're all distinct ones (by violating the {@link Object#equals(Object)} contract).
  * <p>
  * Standard Registrator instances also use a fake plugin identity to register its listeners.
  * You can use the {{@link #Registrator(Plugin)}} constructor to use real plugin identities.
@@ -66,26 +66,33 @@ public final class Registrator {
         defaultFakePlugin = new RegistratorPlugin();
         instance = new Registrator();
         universalListenerObject = new Listener() {
+            
+            //@formatter:off
+            /** return false here to fool the HandlerList into believing each registration is from another Listener.
+             * as a result, no exceptions will be thrown when registering multiple listeners for the same event and priority.
+             *
+             * Another option is to have this for each instance:
+             *
+             *
+             * <pre>{@code
+    private Listener getListenerFor(HandlerList list, EventPriority priority) {
+        int needed = (int) (listeners.get(list).stream().filter(listener -> listener.getPriority() == priority).count() + 1);
+        while (needed > myListeners.size()) {
+            myListeners.add(new Listener() {});
+        }
+        return myListeners.get(needed - 1);
+    }
+             * }</pre>
+             *
+             *
+             * Where {@code myListeners} is a List<Listener>
+             *
+             *
+             */
+            //@formatter:on
             @Override
             public boolean equals(Object obj) {
-                /* return false here to fool the HandlerList into believing each registration is from another Listener.
-                 * as a result, no exceptions will be thrown when registering multiple listeners for the same event and priority.
-                 *
-                 * Another option is to have this for each instance:
-                 * <p>
-                 *
-                 *      private Listener getListenerFor(HandlerList list, EventPriority priority) {
-                            int needed = (int) (listeners.get(list).stream().filter(listener -> listener.getPriority() == priority).count() + 1);
-                            while (needed > myListeners.size()) {
-                                myListeners.add(new Listener() {});
-                            }
-                            return myListeners.get(needed - 1);
-                        }
-                    <p>
-                    Where {@code myListeners} is a List<Listener>
-    }
-                 *
-                 */
+    
                 return false;
             }
         };
