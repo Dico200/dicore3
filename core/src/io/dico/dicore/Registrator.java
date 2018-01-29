@@ -43,6 +43,19 @@ import java.util.function.Consumer;
  * You can use the {{@link #Registrator(Plugin)}} constructor to use real plugin identities.
  */
 public final class Registrator {
+    
+    // ############################################
+    // # Public static methods
+    // ############################################
+    
+    public static Registrator getInstance() {
+        return instance;
+    }
+    
+    // ############################################
+    // # Static fields and initializer
+    // ############################################
+    
     private static final Registrator instance;
     private static final Listener universalListenerObject;
     private static final Plugin defaultFakePlugin;
@@ -78,6 +91,10 @@ public final class Registrator {
         };
     }
     
+    // ############################################
+    // # Instance fields and constructors
+    // ############################################
+    
     private final List<Registration> registrations;
     private Plugin plugin;
     private Registration pluginEnableListener;
@@ -111,12 +128,12 @@ public final class Registrator {
         setPlugin(plugin);
     }
     
-    public static Registrator getInstance() {
-        return instance;
-    }
+    // ############################################
+    // # Internal static methods
+    // ############################################
     
     /**
-     * static {@link EventExecutor} instantiator to make sure executors don't reference any unneeded objects.
+     * static {@link EventExecutor} instantiator to make sure executors don't reference any objects unnecessarily.
      */
     @SuppressWarnings("unchecked")
     private static <T extends Event> EventExecutor newEventExecutor(Class<T> eventClass, Consumer<? super T> handler) {
@@ -130,14 +147,6 @@ public final class Registrator {
         return (ignored, event) -> handler.accept((T) event);
     }
     
-    private static HandlerListInfo getHandlerListInfoOf(Class<?> eventClass) {
-        return handlerListCache.computeIfAbsent(eventClass, clz -> {
-            Method method = Reflection.deepSearchMethod(clz, "getHandlerList");
-            boolean requiresFilter = clz != method.getDeclaringClass();
-            return new HandlerListInfo(Reflection.invokeStaticMethod(method), requiresFilter);
-        });
-    }
-    
     /**
      * Reflectively acquire the HandlerList for the given event type.
      *
@@ -149,19 +158,17 @@ public final class Registrator {
         return getHandlerListInfoOf(eventClass).handlerList;
     }
     
-    @SuppressWarnings("UnusedReturnValue")
-    private boolean setEnabled(boolean enabled) {
-        if (this.enabled != enabled) {
-            this.enabled = enabled;
-            if (enabled) {
-                registerAll();
-            } else {
-                unregisterAll();
-            }
-            return true;
-        }
-        return false;
+    private static HandlerListInfo getHandlerListInfoOf(Class<?> eventClass) {
+        return handlerListCache.computeIfAbsent(eventClass, clz -> {
+            Method method = Reflection.deepSearchMethod(clz, "getHandlerList");
+            boolean requiresFilter = clz != method.getDeclaringClass();
+            return new HandlerListInfo(Reflection.invokeStaticMethod(method), requiresFilter);
+        });
     }
+    
+    // ############################################
+    // # Public instance methods
+    // ############################################
     
     /**
      * Change the plugin used by the listeners of this registrator.
@@ -191,103 +198,6 @@ public final class Registrator {
         updatePluginListeners(plugin.isEnabled());
         if (plugin.isEnabled()) {
             setEnabled(true);
-        }
-    }
-    
-    private void initPluginListeners() {
-        if (hasFakePlugin()) {
-            pluginEnableListener = pluginDisableListener = null;
-        } else {
-            if (pluginEnableListener != null) {
-                pluginEnableListener = pluginEnableListener.setPlugin(plugin);
-            } else {
-                pluginEnableListener = createRegistration(false, false, EventPriority.NORMAL, false, PluginEnableEvent.class, this::onPluginEnable);
-            }
-            if (pluginDisableListener != null) {
-                pluginDisableListener = pluginDisableListener.setPlugin(plugin);
-            } else {
-                pluginDisableListener = createRegistration(false, false, EventPriority.NORMAL, false, PluginDisableEvent.class, this::onPluginDisable);
-            }
-        }
-    }
-    
-    private void updatePluginListeners(boolean pluginEnabled) {
-        if (hasFakePlugin()) {
-            setPluginListenerRegisteredStates(false, false);
-        } else {
-            setPluginListenerRegisteredStates(!pluginEnabled, pluginEnabled);
-        }
-    }
-    
-    private void setPluginListenerRegisteredStates(boolean enableListenerRegistered, boolean disableListenerRegistered) {
-        if (pluginEnableListener != null) {
-            if (enableListenerRegistered) {
-                PluginEnableEvent.getHandlerList().register(pluginEnableListener);
-            } else {
-                PluginEnableEvent.getHandlerList().unregister(pluginEnableListener);
-            }
-        }
-        if (pluginDisableListener != null) {
-            if (disableListenerRegistered) {
-                PluginDisableEvent.getHandlerList().register(pluginDisableListener);
-            } else {
-                PluginDisableEvent.getHandlerList().unregister(pluginDisableListener);
-            }
-        }
-    }
-    
-    private void onPluginEnable(PluginEnableEvent event) {
-        if (event.getPlugin() == plugin) {
-            setEnabled(true);
-            updatePluginListeners(true);
-        }
-    }
-    
-    private void onPluginDisable(PluginDisableEvent event) {
-        if (event.getPlugin() == plugin) {
-            setEnabled(false);
-            updatePluginListeners(false);
-        }
-    }
-    
-    private void setListenersPluginTo(Plugin plugin) {
-        List<Registration> registrations = this.registrations;
-        for (int n = registrations.size(), i = 0; i < n; i++) {
-            registrations.set(i, registrations.get(i).setPlugin(plugin));
-        }
-    }
-    
-    private <T extends Event> Registration createRegistration(boolean findCaller, boolean asHandle, EventPriority priority, boolean ignoreCancelled, Class<T> eventClass, Consumer<? super T> handler) {
-        StackTraceElement caller = null;
-        if (findCaller) {
-            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-            if (stackTrace.length > 0) {
-                String className = Registrator.class.getName();
-                for (StackTraceElement element : stackTrace) {
-                    if (!element.getClassName().equals(className) && !element.getClassName().startsWith("java.lang")) {
-                        caller = element;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        EventExecutor executor = newEventExecutor(eventClass, handler);
-        if (asHandle) {
-            return new RegistrationWithHandle(eventClass, caller, executor, priority, plugin, ignoreCancelled);
-        }
-        return new Registration(eventClass, caller, executor, priority, plugin, ignoreCancelled);
-    }
-    
-    private void registerAll() {
-        for (Registration registration : registrations) {
-            registration.register();
-        }
-    }
-    
-    private void unregisterAll() {
-        for (Registration registration : registrations) {
-            registration.unregister();
         }
     }
     
@@ -442,68 +352,10 @@ public final class Registrator {
     public <T extends Event> Registrator registerListener(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, Consumer<? super T> handler) {
         Registration listener = createRegistration(true, false, priority, ignoreCancelled, eventClass, handler);
         registrations.add(listener);
-        
         if (enabled) {
             listener.register();
         }
         return this;
-    }
-    
-    @SuppressWarnings("unchecked")
-    private Collection<ListenerFieldInfo> getListenerFields(Class<?> clazz, Object instance) {
-        Collection<ListenerFieldInfo> rv = new ArrayList<>();
-        
-        Field[] fields = clazz.getDeclaredFields();
-        boolean isStatic = instance == null;
-        if (!isStatic && !clazz.isInstance(instance)) {
-            throw new IllegalArgumentException("Instance must be an instance of the given class");
-        }
-        
-        for (Field f : fields) {
-            if (isStatic != Modifier.isStatic(f.getModifiers())
-                    || f.getType() != IEventListener.class
-                    || !(f.getGenericType() instanceof ParameterizedType)
-                    || !f.isAnnotationPresent(ListenerInfo.class)) {
-                continue;
-            }
-            
-            ParameterizedType pt = (ParameterizedType) f.getGenericType();
-            Type[] typeArgs = pt.getActualTypeArguments();
-            if (typeArgs.length != 1) {
-                continue;
-            }
-            
-            Type eventType = typeArgs[0];
-            if (eventType == null || !(eventType instanceof Class)) {
-                continue;
-            }
-            
-            Consumer<? super Event> lambda;
-            try {
-                f.setAccessible(true);
-                lambda = (Consumer<? super Event>) f.get(instance);
-            } catch (IllegalArgumentException | IllegalAccessException | ClassCastException e) {
-                continue;
-            }
-    
-            Class<? extends Event> baseEventClass = (Class<? extends Event>) eventType;
-    
-            ListenerInfo anno = f.getAnnotation(ListenerInfo.class);
-            String[] eventClassNames = anno.events();
-            if (eventClassNames.length > 0) {
-                
-                for (String eventClassName : eventClassNames) {
-                    Class<? extends Event> eventClass = getEventClassByName(eventClassName);
-                    if (eventClass != null && baseEventClass.isAssignableFrom(eventClass)) {
-                        rv.add(new ListenerFieldInfo(eventClass, lambda, anno));
-                    }
-                }
-                
-            } else {
-                rv.add(new ListenerFieldInfo(baseEventClass, lambda, anno));
-            }
-        }
-        return rv;
     }
     
     public Registrator registerListeners(Class<?> clazz, Object instance) {
@@ -548,14 +400,38 @@ public final class Registrator {
         return registerListener(PlayerKickEvent.class, EventPriority.NORMAL, handler);
     }
     
-    private static Class<? extends Event> getEventClassByName(String name) {
-        try {
-            //noinspection unchecked
-            return (Class<? extends Event>) Class.forName("org.bukkit.event." + name);
-        } catch (ClassNotFoundException | ClassCastException e) {
-            return null;
-        }
+    @Override
+    public String toString() {
+        return "Registrator{" +
+                "plugin: " + plugin +
+                ", enabled: " + enabled +
+                ", registrations: " + registrations.size() +
+                '}';
     }
+    
+    public String toStringWithAllRegistrations() {
+        StringBuilder sb = new StringBuilder("Registrator {");
+        sb.append("\n  plugin: ").append(plugin);
+        sb.append("\n  enabled: ").append(enabled);
+        sb.append("\n  registrations: [");
+        
+        Iterator<Registration> iterator = registrations.iterator();
+        if (iterator.hasNext()) {
+            sb.append("\n    ").append(iterator.next().toString());
+        }
+        while (iterator.hasNext()) {
+            sb.append(',').append("\n    ").append(iterator.next().toString());
+        }
+        if (!registrations.isEmpty()) {
+            sb.append("\n  ");
+        }
+        sb.append("]\n}");
+        return sb.toString();
+    }
+    
+    // ############################################
+    // # Public types
+    // ############################################
     
     public interface IEventListener<T extends Event> extends Consumer<T> {
         @Override
@@ -632,6 +508,204 @@ public final class Registrator {
         }
         
     }
+    
+    // ############################################
+    // # Internal instance methods
+    // ############################################
+    
+    @SuppressWarnings("UnusedReturnValue")
+    private boolean setEnabled(boolean enabled) {
+        if (this.enabled != enabled) {
+            this.enabled = enabled;
+            if (enabled) {
+                registerAllListeners();
+            } else {
+                unregisterAllListeners();
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    private void initPluginListeners() {
+        if (hasFakePlugin()) {
+            pluginEnableListener = pluginDisableListener = null;
+        } else {
+            if (pluginEnableListener != null) {
+                pluginEnableListener = pluginEnableListener.setPlugin(plugin);
+            } else {
+                pluginEnableListener = createRegistration(false, false, EventPriority.NORMAL, false, PluginEnableEvent.class, this::onPluginEnable);
+            }
+            if (pluginDisableListener != null) {
+                pluginDisableListener = pluginDisableListener.setPlugin(plugin);
+            } else {
+                pluginDisableListener = createRegistration(false, false, EventPriority.NORMAL, false, PluginDisableEvent.class, this::onPluginDisable);
+            }
+        }
+    }
+    
+    private void updatePluginListeners(boolean pluginEnabled) {
+        if (hasFakePlugin()) {
+            setPluginListenerRegisteredStates(false, false);
+        } else {
+            setPluginListenerRegisteredStates(!pluginEnabled, pluginEnabled);
+        }
+    }
+    
+    private void setPluginListenerRegisteredStates(boolean enableListenerRegistered, boolean disableListenerRegistered) {
+        if (pluginEnableListener != null) {
+            if (enableListenerRegistered) {
+                PluginEnableEvent.getHandlerList().register(pluginEnableListener);
+            } else {
+                PluginEnableEvent.getHandlerList().unregister(pluginEnableListener);
+            }
+        }
+        if (pluginDisableListener != null) {
+            if (disableListenerRegistered) {
+                PluginDisableEvent.getHandlerList().register(pluginDisableListener);
+            } else {
+                PluginDisableEvent.getHandlerList().unregister(pluginDisableListener);
+            }
+        }
+    }
+    
+    private void onPluginEnable(PluginEnableEvent event) {
+        if (event.getPlugin() == plugin) {
+            setEnabled(true);
+            updatePluginListeners(true);
+        }
+    }
+    
+    private void onPluginDisable(PluginDisableEvent event) {
+        if (event.getPlugin() == plugin) {
+            setEnabled(false);
+            updatePluginListeners(false);
+        }
+    }
+    
+    private void setListenersPluginTo(Plugin plugin) {
+        List<Registration> registrations = this.registrations;
+        for (int n = registrations.size(), i = 0; i < n; i++) {
+            registrations.set(i, registrations.get(i).setPlugin(plugin));
+        }
+    }
+    
+    private <T extends Event> Registration createRegistration(boolean findCaller,
+                                                              boolean asHandle,
+                                                              EventPriority priority,
+                                                              boolean ignoreCancelled,
+                                                              Class<T> eventClass,
+                                                              Consumer<? super T> handler) {
+        StackTraceElement caller = null;
+        if (findCaller) {
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            if (stackTrace.length > 0) {
+                String className = Registrator.class.getName();
+                for (StackTraceElement element : stackTrace) {
+                    if (!element.getClassName().equals(className) && !element.getClassName().startsWith("java.lang")) {
+                        caller = element;
+                        break;
+                    }
+                }
+            }
+        }
+        return createRegistration(caller, asHandle, priority, ignoreCancelled, eventClass, handler);
+    }
+    
+    private <T extends Event> Registration createRegistration(StackTraceElement caller,
+                                                              boolean asHandle,
+                                                              EventPriority priority,
+                                                              boolean ignoreCancelled,
+                                                              Class<T> eventClass,
+                                                              Consumer<? super T> handler) {
+        EventExecutor executor = newEventExecutor(eventClass, handler);
+        if (asHandle) {
+            return new RegistrationWithHandle(eventClass, caller, executor, priority, plugin, ignoreCancelled);
+        }
+        return new Registration(eventClass, caller, executor, priority, plugin, ignoreCancelled);
+    }
+    
+    private void registerAllListeners() {
+        for (Registration registration : registrations) {
+            registration.register();
+        }
+    }
+    
+    private void unregisterAllListeners() {
+        for (Registration registration : registrations) {
+            registration.unregister();
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Collection<ListenerFieldInfo> getListenerFields(Class<?> clazz, Object instance) {
+        Collection<ListenerFieldInfo> rv = new ArrayList<>();
+        
+        Field[] fields = clazz.getDeclaredFields();
+        boolean isStatic = instance == null;
+        if (!isStatic && !clazz.isInstance(instance)) {
+            throw new IllegalArgumentException("Instance must be an instance of the given class");
+        }
+        
+        for (Field f : fields) {
+            if (isStatic != Modifier.isStatic(f.getModifiers())
+                    || f.getType() != IEventListener.class
+                    || !(f.getGenericType() instanceof ParameterizedType)
+                    || !f.isAnnotationPresent(ListenerInfo.class)) {
+                continue;
+            }
+            
+            ParameterizedType pt = (ParameterizedType) f.getGenericType();
+            Type[] typeArgs = pt.getActualTypeArguments();
+            if (typeArgs.length != 1) {
+                continue;
+            }
+            
+            Type eventType = typeArgs[0];
+            if (eventType == null || !(eventType instanceof Class)) {
+                continue;
+            }
+            
+            Consumer<? super Event> lambda;
+            try {
+                f.setAccessible(true);
+                lambda = (Consumer<? super Event>) f.get(instance);
+            } catch (IllegalArgumentException | IllegalAccessException | ClassCastException e) {
+                continue;
+            }
+            
+            Class<? extends Event> baseEventClass = (Class<? extends Event>) eventType;
+            
+            ListenerInfo anno = f.getAnnotation(ListenerInfo.class);
+            String[] eventClassNames = anno.events();
+            if (eventClassNames.length > 0) {
+                
+                for (String eventClassName : eventClassNames) {
+                    Class<? extends Event> eventClass = getEventClassByName(eventClassName);
+                    if (eventClass != null && baseEventClass.isAssignableFrom(eventClass)) {
+                        rv.add(new ListenerFieldInfo(eventClass, lambda, anno));
+                    }
+                }
+                
+            } else {
+                rv.add(new ListenerFieldInfo(baseEventClass, lambda, anno));
+            }
+        }
+        return rv;
+    }
+    
+    private static Class<? extends Event> getEventClassByName(String name) {
+        try {
+            //noinspection unchecked
+            return (Class<? extends Event>) Class.forName("org.bukkit.event." + name);
+        } catch (ClassNotFoundException | ClassCastException e) {
+            return null;
+        }
+    }
+    
+    // ############################################
+    // # Internal types
+    // ############################################
     
     private static final class RegistrationWithHandle extends Registration implements ListenerHandle {
         RegistrationWithHandle(Class<?> eventClass, StackTraceElement caller, EventExecutor executor, EventPriority priority, Plugin plugin, boolean ignoreCancelled) {
@@ -781,35 +855,6 @@ public final class Registrator {
         public boolean equals(Object obj) {
             return this == obj;
         }
-    }
-    
-    @Override
-    public String toString() {
-        return "Registrator{" +
-                "plugin: " + plugin +
-                ", enabled: " + enabled +
-                ", registrations: " + registrations.size() +
-                '}';
-    }
-    
-    public String toStringWithAllRegistrations() {
-        StringBuilder sb = new StringBuilder("Registrator {");
-        sb.append("\n  plugin: ").append(plugin);
-        sb.append("\n  enabled: ").append(enabled);
-        sb.append("\n  registrations: [");
-        
-        Iterator<Registration> iterator = registrations.iterator();
-        if (iterator.hasNext()) {
-            sb.append("\n    ").append(iterator.next().toString());
-        }
-        while (iterator.hasNext()) {
-            sb.append(',').append("\n    ").append(iterator.next().toString());
-        }
-        if (!registrations.isEmpty()) {
-            sb.append("\n  ");
-        }
-        sb.append("]\n}");
-        return sb.toString();
     }
     
 }
