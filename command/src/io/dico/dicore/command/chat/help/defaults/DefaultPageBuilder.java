@@ -5,6 +5,7 @@ import io.dico.dicore.command.ICommandAddress;
 import io.dico.dicore.command.chat.help.*;
 import org.bukkit.permissions.Permissible;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -21,8 +22,6 @@ public class DefaultPageBuilder implements IPageBuilder {
         for (IHelpTopic topic : helpTopics) {
             components.addAll(topic.getComponents(target, viewer, context));
         }
-        
-        System.out.println("component count: " + components.size());
         
         PageBorders pageBorders = null;
         int componentStartIdx = -1;
@@ -97,4 +96,19 @@ public class DefaultPageBuilder implements IPageBuilder {
         return sb.toString();
     }
     
+    public static String combine(List<IHelpComponent> components) {
+        StringBuilder rv = new StringBuilder();
+    
+        Iterator<IHelpComponent> iterator = components.iterator();
+        if (iterator.hasNext()) {
+            iterator.next().appendTo(rv);
+        }
+        while (iterator.hasNext()) {
+            rv.append('\n');
+            iterator.next().appendTo(rv);
+        }
+        
+        return rv.toString();
+    }
+
 }

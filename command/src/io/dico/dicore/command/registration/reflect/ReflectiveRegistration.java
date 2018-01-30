@@ -177,6 +177,7 @@ public class ReflectiveRegistration {
                         addresses[i] = ChildCommandAddress.newPlaceHolderCommand(matchEntry.group(), matchEntry.groupAliases());
                         groupRootAddress.addChild(addresses[i]);
                         generateCommands(addresses[i], matchEntry.generatedCommands());
+                        setDescription(addresses[i], matchEntry.description(), matchEntry.shortDescription());
                     }
                     return addresses[i];
                 }
@@ -243,7 +244,12 @@ public class ReflectiveRegistration {
         
         Desc desc = method.getAnnotation(Desc.class);
         if (desc != null) {
-            command.setDescription(desc.value());
+            String[] array = desc.value();
+            if (array.length == 0) {
+                command.setDescription(desc.shortVersion());
+            } else {
+                command.setDescription(array);
+            }
         } else {
             command.setDescription();
         }
@@ -360,5 +366,17 @@ public class ReflectiveRegistration {
     - see that setting the force flag requires a permission
      */
     
+    private static void setDescription(ICommandAddress address, String[] array, String shortVersion) {
+        if (!address.hasCommand()) {
+            return;
+        }
+        
+        if (array.length == 0) {
+            address.getCommand().setDescription(shortVersion);
+        } else {
+            address.getCommand().setDescription(array);
+        }
+        
+    }
     
 }

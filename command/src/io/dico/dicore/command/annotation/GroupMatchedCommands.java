@@ -45,6 +45,15 @@ public @interface GroupMatchedCommands {
          */
         String[] generatedCommands() default {};
     
+        /**
+         * @see Desc
+         */
+        String[] description() default {};
+    
+        /**
+         * @see Desc
+         */
+        String shortDescription() default "";
     }
     
     /**

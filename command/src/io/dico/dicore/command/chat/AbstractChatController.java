@@ -65,6 +65,17 @@ public class AbstractChatController implements IChatController {
                 return Formatting.GREEN;
             case WARNING:
                 return Formatting.YELLOW;
+            
+            case DESCRIPTION:
+                return Formatting.GREEN;
+            case SYNTAX:
+                return Formatting.BLUE;
+            case HIGHLIGHT:
+                return Formatting.RED;
+            case SUBCOMMAND:
+                return Formatting.GRAY;
+            case NUMBER:
+                return Formatting.YELLOW;
         }
     }
     

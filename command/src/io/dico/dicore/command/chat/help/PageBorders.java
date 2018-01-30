@@ -1,5 +1,7 @@
 package io.dico.dicore.command.chat.help;
 
+import java.util.Arrays;
+
 public class PageBorders {
     private final IPageBorder header, footer;
     
@@ -21,7 +23,11 @@ public class PageBorders {
     }
     
     public static IPageBorder disappearingBorder(int pageNum, String... lines) {
-        return new DisappearingPageBorder(pageNum, lines);
+        return disappearingBorder(pageNum, 0, lines);
+    }
+    
+    public static IPageBorder disappearingBorder(int pageNum, int keptLines, String... lines) {
+        return new DisappearingPageBorder(pageNum, keptLines, lines);
     }
     
     static class SimplePageBorder extends SimpleHelpComponent implements IPageBorder {
@@ -49,16 +55,19 @@ public class PageBorders {
     
     static class DisappearingPageBorder extends SimpleHelpComponent implements IPageBorder {
         private final int pageNum;
+        private final int keptLines;
         
-        public DisappearingPageBorder(int pageNum, String... lines) {
+        public DisappearingPageBorder(int pageNum, int keptLines, String... lines) {
             super(lines);
             this.pageNum = pageNum;
+            this.keptLines = keptLines;
         }
         
         @Override
         public void setPageCount(int pageCount) {
             if (pageCount == pageNum) {
-                lines = new String[0];
+                String[] lines = this.lines;
+                this.lines = Arrays.copyOfRange(lines, Math.max(0, lines.length - keptLines), lines.length);
             }
         }
         

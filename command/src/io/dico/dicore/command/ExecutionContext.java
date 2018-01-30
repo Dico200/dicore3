@@ -322,6 +322,10 @@ public class ExecutionContext {
         return originalBuffer.getArrayFromIndex(cursorStart);
     }
     
+    public Formatting getFormat(EMessageType type) {
+        return address.getChatController().getChatFormatForType(type);
+    }
+    
     /**
      * The full command as cached by the buffer. Might be incomplete depending on how it was dispatched.
      *

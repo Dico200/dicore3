@@ -2,6 +2,7 @@ package io.dico.dicore.command;
 
 import io.dico.dicore.command.chat.ChatControllers;
 import io.dico.dicore.command.chat.IChatController;
+import io.dico.dicore.command.predef.HelpCommand;
 import io.dico.dicore.command.predef.PredefinedCommand;
 
 import java.util.*;
@@ -9,6 +10,7 @@ import java.util.*;
 public abstract class ModifiableCommandAddress implements ICommandAddress {
     Map<String, ChildCommandAddress> children;
     IChatController chatController;
+    ModifiableCommandAddress helpChild;
     
     public ModifiableCommandAddress() {
         this.children = new LinkedHashMap<>(4);
@@ -144,6 +146,18 @@ public abstract class ModifiableCommandAddress implements ICommandAddress {
         }
         
         mChild.setParent(this);
+        
+        if (mChild.hasCommand() && mChild.getCommand() instanceof HelpCommand) {
+            helpChild = mChild;
+        }
+    }
+    
+    public boolean hasHelpCommand() {
+        return helpChild != null;
+    }
+    
+    public ModifiableCommandAddress getHelpCommand() {
+        return helpChild;
     }
     
     @Override

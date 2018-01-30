@@ -9,5 +9,11 @@ public enum EMessageType {
     INSTRUCTION,
     EXCEPTION,
     RESULT,
-    CUSTOM
+    CUSTOM,
+    
+    DESCRIPTION,
+    SYNTAX,
+    HIGHLIGHT,
+    SUBCOMMAND,
+    NUMBER,
 }

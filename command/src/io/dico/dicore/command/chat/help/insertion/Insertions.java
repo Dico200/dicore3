@@ -22,8 +22,8 @@ public class Insertions {
             }
     
             @Override
-            public int insertionIndex(int componentCount, ICommandAddress target, Permissible viewer, ExecutionContext context) {
-                return function.insertionIndex(componentCount, target, viewer, context);
+            public int insertionIndex(List<IHelpComponent> current, ICommandAddress target, Permissible viewer, ExecutionContext context) {
+                return function.insertionIndex(current, target, viewer, context);
             }
         };
     }

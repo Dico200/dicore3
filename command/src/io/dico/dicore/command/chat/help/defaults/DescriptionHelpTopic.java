@@ -18,7 +18,7 @@ public class DescriptionHelpTopic implements IHelpTopic {
     @Override
     public List<IHelpComponent> getComponents(ICommandAddress target, Permissible viewer, ExecutionContext context) {
         List<IHelpComponent> out = new ArrayList<>();
-        Formatting format = context.getAddress().getChatController().getChatFormatForType(EMessageType.INFORMATIVE);
+        Formatting format = context.getFormat(EMessageType.DESCRIPTION);
         
         if (!target.hasCommand()) {
             return out;

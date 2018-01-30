@@ -22,12 +22,10 @@ public class ChildCommandAddress extends ModifiableCommandAddress {
         addNameAndAliases(name, aliases);
     }
     
-    public static ChildCommandAddress newPlaceHolderCommand() {
-        return new ChildCommandAddress(HelpCommand.INSTANCE.setHelpingForParallelChildren(false));
-    }
-    
     public static ChildCommandAddress newPlaceHolderCommand(String name, String... aliases) {
-        return new ChildCommandAddress(HelpCommand.INSTANCE.setHelpingForParallelChildren(false), name, aliases);
+        ChildCommandAddress rv = new ChildCommandAddress(null, name, aliases);
+        HelpCommand.registerAsChild(rv);
+        return rv;
     }
     
     @Override

@@ -4,11 +4,11 @@ import io.dico.dicore.Formatting;
 import io.dico.dicore.command.EMessageType;
 import io.dico.dicore.command.ExecutionContext;
 import io.dico.dicore.command.ICommandAddress;
+import io.dico.dicore.command.ModifiableCommandAddress;
 import io.dico.dicore.command.chat.IChatController;
 import io.dico.dicore.command.chat.help.IPageBorder;
 import io.dico.dicore.command.chat.help.IPageLayout;
 import io.dico.dicore.command.chat.help.PageBorders;
-import io.dico.dicore.command.predef.PredefinedCommand;
 import org.bukkit.permissions.Permissible;
 
 public class DefaultPageLayout implements IPageLayout {
@@ -22,18 +22,18 @@ public class DefaultPageLayout implements IPageLayout {
         
         String nextPageCommand;
         ICommandAddress executor = context.getAddress();
-        if (executor instanceof PredefinedCommand) {
-            nextPageCommand = executor.getAddress() + ' ' + (pageNum + 1);
+        if (((ModifiableCommandAddress) executor).hasHelpCommand()) {
+            nextPageCommand = ((ModifiableCommandAddress) executor).getHelpCommand().getAddress() + ' ' + (pageNum + 1);
         } else {
-            //todo
+            nextPageCommand = executor.getAddress() + ' ' + (pageNum + 1);
         }
         
         String header = prefix + informative + "Help page " + number + pageNum + informative +
                 '/' + number + "%pageCount%" + informative + " for /" + target.getAddress();
-        String footer = informative + "Type /" + context.getAddress().getAddress() + " help " + (pageNum + 1) + " for the next page";
+        String footer = informative + "Type /" + nextPageCommand + " for the next page";
         
-        IPageBorder headerBorder = PageBorders.simpleBorder(header);
-        IPageBorder footerBorder = PageBorders.disappearingBorder(pageNum, footer);
+        IPageBorder headerBorder = PageBorders.simpleBorder("", header);
+        IPageBorder footerBorder = PageBorders.disappearingBorder(pageNum ,footer);
         return new PageBorders(headerBorder, footerBorder);
     }
     

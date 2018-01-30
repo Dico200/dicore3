@@ -46,7 +46,7 @@ public class RootCommandAddress extends ModifiableCommandAddress implements ICom
     @Override
     public void registerToCommandMap(String fallbackPrefix, Map<String, org.bukkit.command.Command> map, EOverridePolicy overridePolicy) {
         Objects.requireNonNull(overridePolicy);
-        debugChildren(this);
+        //debugChildren(this);
         Map<String, ChildCommandAddress> children = this.children;
         Map<ChildCommandAddress, BukkitCommand> wrappers = new IdentityHashMap<>();
         
@@ -118,12 +118,16 @@ public class RootCommandAddress extends ModifiableCommandAddress implements ICom
                     || (child.hasCommand() && !child.getCommand().isVisibleTo(sender))
                     || (cur.hasCommand() && cur.getCommand().takePrecedenceOverSubcommand(buffer.peekPrevious(), buffer.getUnaffectingCopy()))) {
                 buffer.rewind();
-                //System.out.println("Buffer cursor upon rewind: " + buffer.getCursor());
                 return cur;
             }
             
             cur = child;
         }
+
+        if (!cur.hasCommand() && cur.hasHelpCommand()) {
+            cur = cur.getHelpCommand();
+        }
+        
         return cur;
     }
     
@@ -162,7 +166,7 @@ public class RootCommandAddress extends ModifiableCommandAddress implements ICom
     @Override
     public List<String> getTabCompletions(CommandSender sender, Location location, ArgumentBuffer buffer) {
         ICommandAddress target = getCommandTarget(sender, buffer);
-        List<String> out = target.hasCommand() ? target.getCommand().tabComplete(sender, target, location, buffer) : Collections.emptyList();
+        List<String> out = target.hasCommand() ? target.getCommand().tabComplete(sender, target, location, buffer.getUnaffectingCopy()) : Collections.emptyList();
     
         int cursor = buffer.getCursor();
         String input;

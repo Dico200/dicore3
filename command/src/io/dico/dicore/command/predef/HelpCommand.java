@@ -14,7 +14,6 @@ public class HelpCommand extends PredefinedCommand<HelpCommand> {
     private static final IParameter<Integer> pageParameter = new Parameter<>("page", "the page number",
             ParameterTypes.INTEGER, new Range.Memory(1, Integer.MAX_VALUE, 1));
     public static final HelpCommand INSTANCE = new HelpCommand(false);
-    private boolean parallel;
     
     private HelpCommand(boolean modifiable) {
         super(modifiable);
@@ -28,22 +27,10 @@ public class HelpCommand extends PredefinedCommand<HelpCommand> {
         return new HelpCommand(true);
     }
     
-    public HelpCommand setHelpingForParallelChildren(boolean parallel) {
-        if (!modifiable) {
-            return newModifiableInstance().setHelpingForParallelChildren(parallel);
-        }
-        this.parallel = parallel;
-        return this;
-    }
-    
-    private ICommandAddress getHelpAddress(ICommandAddress callingAddress) {
-        return parallel ? callingAddress.getParent() : callingAddress;
-    }
-    
     @Override
     public String execute(CommandSender sender, ExecutionContext context) throws CommandException {
         //System.out.println("In HelpCommand.execute");
-        context.getAddress().getChatController().sendHelpMessage(sender, context, getHelpAddress(context.getAddress()), context.<Integer>get("page") - 1);
+        context.getAddress().getChatController().sendHelpMessage(sender, context, context.getAddress().getParent(), context.<Integer>get("page") - 1);
         return null;
     }
     
@@ -52,7 +39,7 @@ public class HelpCommand extends PredefinedCommand<HelpCommand> {
     }
     
     public static void registerAsChild(ICommandAddress address, String main, String... aliases) {
-        ((ModifiableCommandAddress) address).addChild(new ChildCommandAddress(INSTANCE.setHelpingForParallelChildren(true), main, aliases));
+        ((ModifiableCommandAddress) address).addChild(new ChildCommandAddress(INSTANCE, main, aliases));
     }
     
 }
