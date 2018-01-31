@@ -1,7 +1,9 @@
 package io.dico.dicore.nms;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
@@ -87,6 +89,22 @@ public interface IEntityDriver {
      */
     void setAiDisabled(LivingEntity entity, boolean disabled);
     
+    /**
+     * Spawn an entity at the given location
+     *
+     * @param location loc
+     * @param type type
+     * @return the spawned entity
+     */
+    Entity spawnEntity(Location location, EntityType type);
     
+    /**
+     * Spawn an entity at the given location and the given spawn reason
+     *
+     * @param location loc
+     * @param type type
+     * @return the spawned entity
+     */
+    Entity spawnEntity(Location location, EntityType type, CreatureSpawnEvent.SpawnReason spawnReason);
     
 }

@@ -126,6 +126,11 @@ public class RootCommandAddress extends ModifiableCommandAddress implements ICom
 
         if (!cur.hasCommand() && cur.hasHelpCommand()) {
             cur = cur.getHelpCommand();
+        } else {
+            while (!cur.hasCommand() && cur.hasParent()) {
+                cur = cur.getParent();
+                buffer.rewind();
+            }
         }
         
         return cur;
