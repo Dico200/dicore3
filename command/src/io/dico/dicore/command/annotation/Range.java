@@ -14,9 +14,9 @@ import java.lang.annotation.Target;
 public @interface Range {
     Class<?> MEMORY_CLASS = Memory.class;
     ParameterConfig<Range, Memory> CONFIG = ParameterConfig.getMemoryClassFromField(Range.class);
-    Memory DEFAULT = new Memory(Double.MIN_VALUE, Double.MAX_VALUE, 0);
+    Memory DEFAULT = new Memory(-Double.MAX_VALUE, Double.MAX_VALUE, 0);
     
-    double min() default Double.MIN_VALUE;
+    double min() default -Double.MAX_VALUE;
     
     double max() default Double.MAX_VALUE;
     

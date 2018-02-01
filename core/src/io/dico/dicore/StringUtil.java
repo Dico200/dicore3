@@ -9,6 +9,18 @@ import java.util.stream.IntStream;
 
 public class StringUtil {
     
+    public static String capitalize(String input) {
+        if (input.length() > 0) {
+            char first = input.charAt(0);
+            if (first != (first = Character.toUpperCase(first))) {
+                char[] result = input.toCharArray();
+                result[0] = first;
+                return String.valueOf(result);
+            }
+        }
+        return input;
+    }
+    
     /**
      * Capitalizes the first character of the string or the first character of each word
      *
@@ -18,28 +30,42 @@ public class StringUtil {
      * @return the capitalized string
      */
     public static String capitalize(String input, char spaceChar) {
-        char[] result = input.toCharArray();
         if (spaceChar == '\0') {
-            if (result.length != 0) {
-                char first = result[0];
-                if (first != (first = Character.toUpperCase(first))) {
-                    result[0] = first;
-                    return String.valueOf(result);
-                }
-            }
-            return input;
+            return capitalize(input);
         }
         
+        char[] result = null;
         boolean capitalize = true;
-        boolean changed = false;
-        for (int i = 0; i < result.length; i++) {
-            char c = result[i];
-            if (capitalize && c != (result[i] = Character.toUpperCase(c))) {
-                changed = true;
+        for (int n = input.length(), i = 0; i < n; i++) {
+            char c = input.charAt(i);
+            if (capitalize && c != (c = Character.toUpperCase(c))) {
+                if (result == null) result = input.toCharArray();
+                result[i] = c;
             }
             capitalize = c == spaceChar;
         }
-        return changed ? String.valueOf(result) : input;
+        return result != null ? String.valueOf(result) : input;
+    }
+    
+    public static String capitalize(String input, char spaceChar, char newSpaceChar) {
+        if (newSpaceChar == '\0') {
+            return capitalize(input, spaceChar);
+        }
+    
+        char[] result = null;
+        boolean capitalize = true;
+        for (int n = input.length(), i = 0; i < n; i++) {
+            char c = input.charAt(i);
+            if (capitalize && c != (c = Character.toUpperCase(c))) {
+                if (result == null) result = input.toCharArray();
+                result[i] = c;
+            }
+            if (capitalize = c == spaceChar) {
+                if (result == null) result = input.toCharArray();
+                result[i] = newSpaceChar;
+            }
+        }
+        return result != null ? String.valueOf(result) : input;
     }
     
     /**
