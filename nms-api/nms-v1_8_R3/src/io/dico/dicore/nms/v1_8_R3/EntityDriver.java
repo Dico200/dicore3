@@ -15,10 +15,13 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.UUID;
 
 final class EntityDriver implements IEntityDriver {
     private static final Field blockMaterialField = Reflection.restrictedSearchField(Block.class, "material");
+    private static final Field worldAccessesListField = Reflection.restrictedSearchField(World.class, "u");
+    private static final Field bukkitEntityField = Reflection.restrictedSearchField(net.minecraft.server.v1_8_R3.Entity.class, "bukkitEntity");
     
     @Override
     public boolean isInWater(Entity entity) {
@@ -195,4 +198,32 @@ final class EntityDriver implements IEntityDriver {
         }
     }
     
+    static void _setBukkitEntity(net.minecraft.server.v1_8_R3.Entity entity, CraftEntity to) {
+        Reflection.setFieldValue(bukkitEntityField, entity, to);
+    }
+    
+    @Override
+    public ExperienceOrb spawnExperienceOrb(Location location) {
+        WorldServer world = ((CraftWorld) location.getWorld()).getHandle();
+        int chunkX = MathHelper.floor(location.getX() / 16);
+        int chunkZ = MathHelper.floor(location.getZ() / 16);
+        if (!NmsDriver._isChunkLoaded(world, chunkX, chunkZ)) {
+            return null;
+        }
+        
+        EntityExperienceOrb orb = new EntityExperienceOrb(world);
+        orb.setPosition(location.getX(), location.getY(), location.getZ());
+        
+        world.getChunkAt(chunkX, chunkZ).a(orb);
+        world.entityList.add(orb);
+        
+        List<IWorldAccess> worldAccesses = Reflection.getFieldValue(worldAccessesListField, world);
+        for (int n = worldAccesses.size(), i = 0; i < n; i++) {
+            worldAccesses.get(i).a(orb);
+        }
+        
+        CraftExperienceOrb rv = new CraftExperienceOrb(world.getServer(), orb);
+        _setBukkitEntity(orb, rv);
+        return rv;
+    }
 }

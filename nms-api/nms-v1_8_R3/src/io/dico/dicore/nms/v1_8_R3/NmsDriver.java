@@ -11,7 +11,9 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_8_R3.CraftSound;
+import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
@@ -78,6 +80,22 @@ final class NmsDriver implements INmsDriver {
     @Override
     public IItemDriver getItemDriver() {
         return itemDriver;
+    }
+    
+    @Override
+    public boolean isChunkLoaded(World world, int cx, int cz) {
+        WorldServer handle = ((CraftWorld) world).getHandle();
+        return _isChunkLoaded(handle, cx, cz);
+    }
+    
+    static boolean _isChunkLoaded(WorldServer world, int cx, int cz) {
+        IChunkProvider cp = world.N();
+        return cp.isChunkLoaded(cx, cz) && !cp.getOrCreateChunk(cx, cz).isEmpty();
+    }
+    
+    @Override
+    public boolean isChunkLoaded(Block block) {
+        return isChunkLoaded(block.getWorld(), MathHelper.floor(block.getX() / 16), MathHelper.floor(block.getZ() / 16));
     }
     
 }

@@ -107,4 +107,12 @@ public interface IEntityDriver {
      */
     Entity spawnEntity(Location location, EntityType type, CreatureSpawnEvent.SpawnReason spawnReason);
     
+    /**
+     * Spawn an xp orb (bypasses spigot xp orb merge)
+     *
+     * @param location the location
+     * @return the newly spawned xp orb, or null if the chunk is not loaded
+     */
+    ExperienceOrb spawnExperienceOrb(Location location);
+    
 }

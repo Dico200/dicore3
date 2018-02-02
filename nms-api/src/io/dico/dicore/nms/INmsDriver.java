@@ -6,6 +6,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 /**
@@ -65,16 +66,29 @@ public interface INmsDriver {
     /**
      * Send a sound packet efficiently to only one player
      */
-    public void sendSoundPacket(Player player, Sound sound, float volume, float pitch);/* {
-        EntityPlayer p = ((CraftPlayer) player).getHandle();
-        p.playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(CraftSound.getSound(sound), p.locX, p.locY, p.locZ, volume, pitch));
-    }*/
+    void sendSoundPacket(Player player, Sound sound, float volume, float pitch);
     
     /**
      * Send a sound packet with custom location data to only one player
      */
-    public void sendSoundPacket(Player player, Sound sound, Location loc, float volume, float pitch);/* {
-        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(CraftSound.getSound(sound), loc.getX(), loc.getY(), loc.getZ(), volume, pitch));
-    }*/
+    void sendSoundPacket(Player player, Sound sound, Location loc, float volume, float pitch);
+    
+    /**
+     * Check if the chunk is loaded
+     *
+     * @param world world of the chunk
+     * @param cx x coordinate of the chunk (floor(blockx/16))
+     * @param cz z coordinate of the chunk (floor(blockz/16))
+     * @return true if the chunk is loaded
+     */
+    boolean isChunkLoaded(World world, int cx, int cz);
+    
+    /**
+     * Check if the block's chunk is loaded
+     *
+     * @param block the block
+     * @return true if the chunk is loaded
+     */
+    boolean isChunkLoaded(Block block);
     
 }
