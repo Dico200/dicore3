@@ -7,7 +7,9 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * The nms driver
@@ -90,5 +92,14 @@ public interface INmsDriver {
      * @return true if the chunk is loaded
      */
     boolean isChunkLoaded(Block block);
+    
+    /**
+     * Actually drop the item naturally
+     *
+     * @param block the location
+     * @param item the item
+     * @return the entity representing the item drop
+     */
+    Item dropItemNaturally(Block block, ItemStack item);
     
 }

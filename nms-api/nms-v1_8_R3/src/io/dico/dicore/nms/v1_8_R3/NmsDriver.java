@@ -14,8 +14,11 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_8_R3.CraftSound;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftItem;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 // instantiated reflectively by the NmsFactory
 final class NmsDriver implements INmsDriver {
@@ -96,6 +99,20 @@ final class NmsDriver implements INmsDriver {
     @Override
     public boolean isChunkLoaded(Block block) {
         return isChunkLoaded(block.getWorld(), MathHelper.floor(block.getX() / 16), MathHelper.floor(block.getZ() / 16));
+    }
+    
+    @Override
+    public org.bukkit.entity.Item dropItemNaturally(Block block, ItemStack itemStack) {
+        net.minecraft.server.v1_8_R3.World world = ((CraftWorld) block.getWorld()).getHandle();
+        double d0 = (double) (world.random.nextFloat() * 0.5F) + 0.25;
+        double d1 = (double) (world.random.nextFloat() * 0.5F) + 0.25;
+        double d2 = (double) (world.random.nextFloat() * 0.5F) + 0.25;
+        EntityItem item = new EntityItem(world, block.getX() + d0, block.getY() + d1, block.getZ() + d2, CraftItemStack.asNMSCopy(itemStack));
+        item.p();
+        world.addEntity(item);
+        CraftItem rv = new CraftItem(world.getServer(), item);
+        EntityDriver._setBukkitEntity(item, rv);
+        return rv;
     }
     
 }
