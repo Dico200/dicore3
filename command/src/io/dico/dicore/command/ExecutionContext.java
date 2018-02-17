@@ -19,6 +19,7 @@ import java.util.*;
 public class ExecutionContext {
     private final CommandSender sender;
     private final ICommandAddress address;
+    private final Command command;
     private final ArgumentBuffer originalBuffer;
     private final ArgumentBuffer processedBuffer;
     
@@ -52,15 +53,18 @@ public class ExecutionContext {
      * @param buffer      the arguments
      * @param tabComplete true if this execution is a tab-completion
      */
-    public ExecutionContext(CommandSender sender, ICommandAddress address, ArgumentBuffer buffer, boolean tabComplete) {
+    public ExecutionContext(CommandSender sender, ICommandAddress address, Command command, ArgumentBuffer buffer, boolean tabComplete) {
         //System.out.println("In ExecutionContext.ctor");
         this.sender = Objects.requireNonNull(sender);
         this.address = Objects.requireNonNull(address);
+        this.command = Objects.requireNonNull(command);
         this.quiet = tabComplete;
         
+        /*
         if (!address.hasCommand()) {
             throw new IllegalArgumentException("no command found");
         }
+        */
         
         //System.out.println("buffer: " + Arrays.toString(buffer.getArrayFromIndex(0)) + ", cursor: " + buffer.getCursor());
         
@@ -206,26 +210,26 @@ public class ExecutionContext {
     
         static ArraySetter getSetter(Class<?> clazz) {
             if (!clazz.isPrimitive()) {
-                return Array::set;
+                return (array, index, value) -> ((Object[]) array)[index] = value;
             }
         
             switch (clazz.getSimpleName()) {
                 case "boolean":
-                    return (array, index, value) -> Array.setBoolean(array, index, (boolean) value);
+                    return (array, index, value) -> ((boolean[]) array)[index] = (boolean) value;
                 case "int":
-                    return (array, index, value) -> Array.setInt(array, index, (int) value);
+                    return (array, index, value) -> ((int[]) array)[index] = (int) value;
                 case "double":
-                    return (array, index, value) -> Array.setDouble(array, index, (double) value);
+                    return (array, index, value) -> ((double[]) array)[index] = (double) value;
                 case "long":
-                    return (array, index, value) -> Array.setLong(array, index, (long) value);
+                    return (array, index, value) -> ((long[]) array)[index] = (long) value;
                 case "short":
-                    return (array, index, value) -> Array.setShort(array, index, (short) value);
+                    return (array, index, value) -> ((short[]) array)[index] = (short) value;
                 case "byte":
-                    return (array, index, value) -> Array.setByte(array, index, (byte) value);
+                    return (array, index, value) -> ((byte[]) array)[index] = (byte) value;
                 case "float":
-                    return (array, index, value) -> Array.setFloat(array, index, (float) value);
+                    return (array, index, value) -> ((float[]) array)[index] = (float) value;
                 case "char":
-                    return (array, index, value) -> Array.setChar(array, index, (char) value);
+                    return (array, index, value) -> ((char[]) array)[index] = (char) value;
                 case "void":
                 default:
                     throw new InternalError("This should not happen");
@@ -274,7 +278,7 @@ public class ExecutionContext {
      * @return the command
      */
     public Command getCommand() {
-        return address.getCommand();
+        return command;
     }
     
     /**
@@ -283,7 +287,7 @@ public class ExecutionContext {
      * @return the parameter list
      */
     public ParameterList getParameterList() {
-        return address.getCommand().getParameterList();
+        return command.getParameterList();
     }
     
     /**
@@ -397,7 +401,7 @@ public class ExecutionContext {
     /**
      * Get suggested completions.
      *
-     * @param location The location as passed to {@link org.bukkit.command.Command#tabComplete(CommandSender, String, String[], Location)}, or null if requested in another way.
+     * @param location The location as passed to {link org.bukkit.command.Command#tabComplete(CommandSender, String, String[], Location)}, or null if requested in another way.
      * @return completions.
      */
     public List<String> getSuggestedCompletions(Location location) {

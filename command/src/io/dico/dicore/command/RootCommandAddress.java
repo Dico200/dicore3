@@ -118,12 +118,13 @@ public class RootCommandAddress extends ModifiableCommandAddress implements ICom
                     || (child.hasCommand() && !child.getCommand().isVisibleTo(sender))
                     || (cur.hasCommand() && cur.getCommand().takePrecedenceOverSubcommand(buffer.peekPrevious(), buffer.getUnaffectingCopy()))) {
                 buffer.rewind();
-                return cur;
+                break;
             }
             
             cur = child;
         }
 
+        /*
         if (!cur.hasCommand() && cur.hasHelpCommand()) {
             cur = cur.getHelpCommand();
         } else {
@@ -132,6 +133,7 @@ public class RootCommandAddress extends ModifiableCommandAddress implements ICom
                 buffer.rewind();
             }
         }
+        */
         
         return cur;
     }
@@ -148,13 +150,18 @@ public class RootCommandAddress extends ModifiableCommandAddress implements ICom
     
     @Override
     public boolean dispatchCommand(CommandSender sender, ArgumentBuffer buffer) {
-        ICommandAddress target = getCommandTarget(sender, buffer);
+        ModifiableCommandAddress targetAddress = getCommandTarget(sender, buffer);
+        Command target = targetAddress.getCommand();
         
-        if (!target.hasCommand()) {
-            return false;
+        if (target == null) {
+            if (targetAddress.hasHelpCommand()) {
+                target = targetAddress.getHelpCommand().getCommand();
+            } else {
+                return false;
+            }
         }
         
-        target.getCommand().execute(sender, target, buffer);
+        target.execute(sender, targetAddress, buffer);
         return true;
     }
     

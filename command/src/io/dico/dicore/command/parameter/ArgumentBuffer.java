@@ -65,6 +65,10 @@ public class ArgumentBuffer extends AbstractList<String> implements Iterator<Str
         return cursor - 1;
     }
     
+    public int remainingElements() {
+        return size() - nextIndex() - 1;
+    }
+    
     @Override
     public boolean hasNext() {
         return nextIndex() < size();

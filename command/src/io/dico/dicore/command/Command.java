@@ -138,16 +138,8 @@ public abstract class Command {
     
     // ---- EXECUTION ----
     
-    private ExecutionContext getExecutionContext(CommandSender sender, ICommandAddress caller, ArgumentBuffer buffer, boolean tabComplete) {
-        if (caller.getCommand() != this) {
-            throw new IllegalArgumentException();
-        }
-        
-        return new ExecutionContext(sender, caller, buffer, tabComplete);
-    }
-    
     public void execute(CommandSender sender, ICommandAddress caller, ArgumentBuffer buffer) {
-        ExecutionContext executionContext = getExecutionContext(sender, caller, buffer, false);
+        ExecutionContext executionContext = new ExecutionContext(sender, caller, this, buffer, false);
         
         try {
             //System.out.println("In Command.execute(sender, caller, buffer)#try{");
@@ -174,7 +166,7 @@ public abstract class Command {
     public abstract String execute(CommandSender sender, ExecutionContext context) throws CommandException;
     
     public List<String> tabComplete(CommandSender sender, ICommandAddress caller, Location location, ArgumentBuffer buffer) {
-        ExecutionContext executionContext = getExecutionContext(sender, caller, buffer, true);
+        ExecutionContext executionContext = new ExecutionContext(sender, caller, this, buffer, true);
         
         try {
             int i, n;
