@@ -1,8 +1,5 @@
 package io.dico.dicore.command.registration.reflect;
 
-import com.thoughtworks.paranamer.BytecodeReadingParanamer;
-import com.thoughtworks.paranamer.CachingParanamer;
-import com.thoughtworks.paranamer.Paranamer;
 import io.dico.dicore.command.*;
 import io.dico.dicore.command.annotation.*;
 import io.dico.dicore.command.parameter.IArgumentPreProcessor;
@@ -37,15 +34,22 @@ public class ReflectiveRegistration {
      * It's just linked instead of using an array for that part. Then we can use an AdaptiveParanamer for the latest fallback, to get bytecode names
      * or, finally, to get the Jvm-provided parameter names.
      */
-    private static final Paranamer paranamer = new CachingParanamer(new BytecodeReadingParanamer());
+    //private static final Paranamer paranamer = new CachingParanamer(new BytecodeReadingParanamer());
     
     @SuppressWarnings("StatementWithEmptyBody")
     private static String[] lookupParameterNames(Method method, java.lang.reflect.Parameter[] parameters, int start) {
         int n = parameters.length;
         String[] out = new String[n - start];
     
-        String[] bytecode = paranamer.lookupParameterNames(method, false);
-        int bn = bytecode.length;
+        //String[] bytecode;
+        //try {
+        //    bytecode = paranamer.lookupParameterNames(method, false);
+        //} catch (Exception ex) {
+        //    bytecode = new String[0];
+        //    System.err.println("io.dico.dicore.command.registration.reflect.ReflectiveRegistration.lookupParameterNames failed to read bytecode");
+        //    //ex.printStackTrace();
+        //}
+        //int bn = bytecode.length;
         
         for (int i = start; i < n; i++) {
             java.lang.reflect.Parameter parameter = parameters[i];
@@ -56,7 +60,7 @@ public class ReflectiveRegistration {
             String name;
             if (namedArg != null && !(name = namedArg.value()).isEmpty()) {
             } else if (isFlag && !(name = flag.value()).isEmpty()) {
-            } else if (i < bn && (name = bytecode[i]) != null && !name.isEmpty()) {
+            //} else if (i < bn && (name = bytecode[i]) != null && !name.isEmpty()) {
             } else {
                 name = parameter.getName();
             }
