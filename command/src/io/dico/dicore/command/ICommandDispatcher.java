@@ -96,4 +96,10 @@ public interface ICommandDispatcher {
      */
     void registerToCommandMap(String fallbackPrefix, Map<String, org.bukkit.command.Command> map, EOverridePolicy overridePolicy);
     
+    default void unregisterFromCommandMap() {
+        unregisterFromCommandMap(CommandMap.getCommandMap());
+    }
+    
+    void unregisterFromCommandMap(Map<String, org.bukkit.command.Command> map);
+    
 }

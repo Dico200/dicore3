@@ -91,6 +91,19 @@ public class RootCommandAddress extends ModifiableCommandAddress implements ICom
     }
     
     @Override
+    public void unregisterFromCommandMap(Map<String, org.bukkit.command.Command> map) {
+        Set<ICommandAddress> children = new HashSet<>(this.children.values());
+        Iterator<Map.Entry<String, org.bukkit.command.Command>> iterator = map.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, org.bukkit.command.Command> entry = iterator.next();
+            org.bukkit.command.Command cmd = entry.getValue();
+            if (cmd instanceof BukkitCommand && children.contains(((BukkitCommand) cmd).getOrigin())) {
+                iterator.remove();
+            }
+        }
+    }
+    
+    @Override
     public ModifiableCommandAddress getDeepChild(ArgumentBuffer buffer) {
         ModifiableCommandAddress cur = this;
         ChildCommandAddress child;
@@ -201,5 +214,4 @@ public class RootCommandAddress extends ModifiableCommandAddress implements ICom
         
         return out;
     }
-    
 }

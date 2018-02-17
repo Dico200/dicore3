@@ -16,10 +16,12 @@ import java.util.List;
  */
 public class BukkitCommand extends Command {
     private ICommandDispatcher dispatcher;
+    private ICommandAddress origin;
     
     public BukkitCommand(ICommandAddress address) {
         super(validateTree(address).getNames().get(0), "", "", address.getNames().subList(1, address.getNames().size()));
         this.dispatcher = address.getDispatcherForTree();
+        this.origin = address;
         
         setTimingsIfNecessary(this);
     }
@@ -32,6 +34,10 @@ public class BukkitCommand extends Command {
             throw new IllegalArgumentException();
         }
         return tree;
+    }
+    
+    public ICommandAddress getOrigin() {
+        return origin;
     }
     
     @Override
