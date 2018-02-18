@@ -109,4 +109,32 @@ class NBT {
         }
     }
     
+    static byte getElementTypeId(ENbtType elementType) {
+        switch (elementType) {
+            case BYTE:
+                return 1;
+            case SHORT:
+                return 2;
+            case INT:
+                return 3;
+            case LONG:
+                return 4;
+            case FLOAT:
+                return 5;
+            case DOUBLE:
+                return 6;
+            case BYTE_ARRAY:
+                return 7;
+            case STRING:
+                return 8;
+            case LIST:
+                return 9;
+            case MAP:
+                return 10;
+            case INT_ARRAY:
+                return 11;
+        }
+        throw new IllegalArgumentException();
+    }
+    
 }

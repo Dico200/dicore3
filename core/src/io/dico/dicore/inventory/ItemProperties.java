@@ -97,15 +97,19 @@ public class ItemProperties implements JsonLoadable {
         writer.beginObject();
         
         writer.name("id").value(id);
-        writer.name("data").value(data);
-        writer.name("amount").value(amount);
+        if (data != 0) {
+            writer.name("data").value(data);
+        }
+        if (amount != 1) {
+            writer.name("amount").value(amount);
+        }
         
         if (displayName != null) {
             writer.name("displayName");
             writer.value(getDisplayNameInConfig());
         }
         
-        if (enchantments != null) {
+        if (enchantments != null && !enchantments.isEmpty()) {
             writer.name("enchantments");
             Map<Enchantment, Integer> enchantments = this.enchantments;
             Map<String, Integer> stringKeys = new HashMap<>(enchantments.size());
@@ -130,12 +134,16 @@ public class ItemProperties implements JsonLoadable {
     
     public void writeTo(Map<String, Object> map) {
         map.put("id", id);
-        map.put("data", data);
-        map.put("amount", amount);
+        if (data != 0) {
+            map.put("data", data);
+        }
+        if (amount != 1) {
+            map.put("amount", amount);
+        }
         if (displayName != null) {
             map.put("displayName", getDisplayNameInConfig());
         }
-        if (enchantments != null) {
+        if (enchantments != null && !enchantments.isEmpty()) {
             Map<Enchantment, Integer> enchantments = this.enchantments;
             Map<String, Integer> stringKeys = new HashMap<>();
             for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
@@ -154,6 +162,8 @@ public class ItemProperties implements JsonLoadable {
     @Override
     @SuppressWarnings("unchecked")
     public void loadFrom(JsonReader reader) throws IOException {
+        data = 0;
+        amount = 1;
         reader.beginObject();
         while (reader.hasNext()) {
             final String key = reader.nextName();
@@ -218,6 +228,8 @@ public class ItemProperties implements JsonLoadable {
     }
     
     public ItemProperties loadFrom(Map<String, Object> map) {
+        data = 0;
+        amount = 1;
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             final String key = entry.getKey();
             switch (key) {

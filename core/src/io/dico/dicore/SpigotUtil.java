@@ -257,6 +257,32 @@ public class SpigotUtil {
         return removed;
     }
     
+    public static int getTotalExp(Player entity) {
+        int rv = 0;
+        int level = Math.min(entity.getLevel(), 2000);
+        for (int i = 0; i < level; i++) {
+            rv += xpForNextLevel(i);
+        }
+        rv += Math.min(1F, Math.max(0F, entity.getExp())) * xpForNextLevel(level);
+        return rv;
+    }
+    
+    public static double getTotalExpLevels(Player entity) {
+        int xp = entity.getTotalExperience();
+        
+        int level = 0;
+        while (xp > 0 && level < 2000) {
+            int needed = xpForNextLevel(level);
+            if (needed > xp) {
+                return level + ((double) xp / needed);
+            }
+            xp -= needed;
+            level++;
+        }
+        
+        return level;
+    }
+    
     public static int getNearbyPlayerCount(Player origin, double range, Predicate<Player> predicate) {
         List<Entity> entities = origin.getNearbyEntities(range, range, range);
         int result = 0;

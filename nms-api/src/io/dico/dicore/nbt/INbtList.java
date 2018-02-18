@@ -19,6 +19,14 @@ public interface INbtList extends List<Object> {
      * @return The {@link ENbtType ENbtType} of each of the elements, or null if it has not yet been recorded.
      */
     ENbtType getElementType();
+    
+    /**
+     * Sets the element type reported by the underlying tag list.
+     * Parts of the server will check that this type has a certain value.
+     *
+     * @param elementType the element type to set
+     */
+    void setElementType(ENbtType elementType);
 
     /**
      * Item tags require wrapped nbt maps and lists.
@@ -299,7 +307,12 @@ public interface INbtList extends List<Object> {
         public ENbtType getElementType() {
             return null;
         }
-
+    
+        @Override
+        public void setElementType(ENbtType elementType) {
+            throw new UnsupportedOperationException();
+        }
+    
         @Override
         public INbtMap getMap(int index, INbtMap absent) {
             return absent;

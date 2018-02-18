@@ -174,6 +174,9 @@ public final class Formatting implements CharSequence {
     }
     
     public static String translateFormat(char fromChar, char toChar, String input) {
+        if (input == null) {
+            return null;
+        }
         int n = input.length();
         if (n < 2) {
             return input;

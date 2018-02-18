@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 
 final class WrappedNbtList extends AbstractList<Object> implements INbtList, RandomAccess {
     private static final Field nbtListField = Reflection.restrictedSearchField(NBTTagList.class, "list");
+    private static final Field nbtTypeField = Reflection.restrictedSearchField(NBTTagList.class, "type");
     final NBTTagList delegate;
     private final List<NBTBase> list;
     
@@ -30,7 +31,12 @@ final class WrappedNbtList extends AbstractList<Object> implements INbtList, Ran
     
     @Override
     public ENbtType getElementType() {
-        return NBT.getElementType(delegate.getTypeId());
+        return NBT.getElementType((byte) delegate.f());
+    }
+    
+    @Override
+    public void setElementType(ENbtType elementType) {
+        Reflection.setFieldValue(nbtTypeField, delegate, NBT.getElementTypeId(elementType));
     }
     
     @Override
