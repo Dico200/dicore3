@@ -259,7 +259,7 @@ public class SpigotUtil {
     
     public static int getTotalExp(Player entity) {
         int rv = 0;
-        int level = Math.min(entity.getLevel(), 2000);
+        int level = Math.min(entity.getLevel(), 20000);
         for (int i = 0; i < level; i++) {
             rv += xpForNextLevel(i);
         }
@@ -271,7 +271,7 @@ public class SpigotUtil {
         int xp = entity.getTotalExperience();
         
         int level = 0;
-        while (xp > 0 && level < 2000) {
+        while (xp > 0 && level < 20000) {
             int needed = xpForNextLevel(level);
             if (needed > xp) {
                 return level + ((double) xp / needed);
