@@ -30,8 +30,17 @@ public class MultiGui {
         refreshItems(inventory);
     }
     
+    protected MultiGui(Inventory inventory) {
+        this.inventory = inventory;
+    }
+    
     protected MultiGui(MultiGuiDriver driver) {
         this();
+        driver.addGui(this);
+    }
+    
+    protected MultiGui(MultiGuiDriver driver, Inventory inventory) {
+        this(inventory);
         driver.addGui(this);
     }
     
