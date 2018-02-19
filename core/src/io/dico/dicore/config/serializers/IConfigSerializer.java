@@ -4,7 +4,7 @@ import io.dico.dicore.config.ConfigLogging;
 
 public interface IConfigSerializer<T> {
     
-    T load(Object source, ConfigLogging logger);
+    SerializerResult<T> load(Object source, ConfigLogging logger);
     
     T defaultValue();
     

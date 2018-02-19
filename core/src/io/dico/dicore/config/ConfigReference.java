@@ -1,7 +1,7 @@
 package io.dico.dicore.config;
 
 import io.dico.dicore.config.serializers.IConfigSerializer;
-import io.dico.dicore.config.serializers.IConfigSerializerMapper;
+import io.dico.dicore.config.serializers.SerializerResult;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.Objects;
@@ -9,13 +9,23 @@ import java.util.Objects;
 public class ConfigReference<T> implements ConfigEntry {
     protected final String location;
     protected IConfigSerializer<T> serializer;
+    protected boolean hasDefaultValue;
+    protected T defaultValue;
     protected T value;
     
-    public ConfigReference(String location, IConfigSerializer<? extends T> serializer) {
+    protected ConfigReference(String location) {
+        Objects.requireNonNull(location);
         this.location = location;
-        //noinspection unchecked
-        this.serializer = (IConfigSerializer<T>) Objects.requireNonNull(serializer);
-        this.value = serializer.defaultValue();
+    }
+    
+    public ConfigReference(String location, IConfigSerializer<T> serializer) {
+        this(location);
+        this.serializer = serializer;
+    }
+    
+    public ConfigReference(String location, IConfigSerializer<T> serializer, T defaultValue) {
+        this(location, serializer);
+        setDefaultValue(defaultValue);
     }
     
     public final T getValue() {
@@ -27,13 +37,19 @@ public class ConfigReference<T> implements ConfigEntry {
         return location;
     }
     
+    public void setDefaultValue(T defaultValue) {
+        value = defaultValue;
+        hasDefaultValue = true;
+    }
+    
     @Override
     public void load(ConfigurationSection section, ConfigLogging logger) {
         logger.enterPrefix("(" + serializer.type().getSimpleName() + ") ");
         logger.enterPrefix(location);
         try {
             Object source = section.get(location);
-            value = serializer.load(source, logger);
+            SerializerResult<T> result = serializer.load(source, logger);
+            value = result.isDefault && hasDefaultValue ? defaultValue : result.value;
         } finally {
             logger.exitPrefix();
             logger.exitPrefix();
@@ -45,18 +61,13 @@ public class ConfigReference<T> implements ConfigEntry {
         section.set(location, serializer.serialize(value));
     }
     
-    public IConfigSerializer<?> getSerializer() {
+    public IConfigSerializer<T> getSerializer() {
         return serializer;
     }
     
-    public void setSerializer(IConfigSerializer<?> serializer) {
+    public void setSerializer(IConfigSerializer<T> serializer) {
         //noinspection unchecked
-        this.serializer = (IConfigSerializer<T>) Objects.requireNonNull(serializer);
-    }
-    
-    public void mapSerializer(IConfigSerializerMapper<?, ?> mapper) {
-        //noinspection unchecked
-        setSerializer(((IConfigSerializer) getSerializer()).map(mapper));
+        this.serializer = Objects.requireNonNull(serializer);
     }
     
 }

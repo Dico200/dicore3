@@ -3,16 +3,18 @@ package io.dico.dicore.config.serializers;
 import io.dico.dicore.config.ConfigLogging;
 
 abstract class BaseConfigSerializer<T> implements IConfigSerializer<T> {
-    
-    public abstract SerializerResult<T> loadResult(Object source, ConfigLogging logger);
-    
-    @Override
-    public T load(Object source, ConfigLogging logger) {
-        return loadResult(source, logger).value;
-    }
+    private SerializerResult<T> defaultValueResult;
     
     public SerializerResult<T> defaultValueResult() {
-        return new SerializerResult<>(defaultValue(), true);
+        if (defaultValueResult == null) {
+            T defaultValue = defaultValue();
+            if (defaultValue == null) {
+                defaultValueResult = SerializerResult.defaultNull();
+            } else {
+                defaultValueResult = new SerializerResult<>(defaultValue, true);
+            }
+        }
+        return defaultValueResult;
     }
     
     static <T> BaseConfigSerializer<T> wrap(IConfigSerializer<T> serializer) {
@@ -21,12 +23,7 @@ abstract class BaseConfigSerializer<T> implements IConfigSerializer<T> {
         }
         return new DelegatedConfigSerializer<T, T, IConfigSerializer<T>>(serializer) {
             @Override
-            public SerializerResult<T> loadResult(Object source, ConfigLogging logger) {
-                return new SerializerResult<>(load(source, logger));
-            }
-    
-            @Override
-            public T load(Object source, ConfigLogging logger) {
+            public SerializerResult<T> load(Object source, ConfigLogging logger) {
                 return delegate.load(source, logger);
             }
     

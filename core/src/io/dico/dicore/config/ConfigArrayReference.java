@@ -2,49 +2,64 @@ package io.dico.dicore.config;
 
 import io.dico.dicore.config.serializers.ArrayConfigSerializer;
 import io.dico.dicore.config.serializers.ConfigSerializers;
-import io.dico.dicore.config.serializers.DelegatedConfigSerializer;
 import io.dico.dicore.config.serializers.IConfigSerializer;
 import org.bukkit.configuration.ConfigurationSection;
 
-import java.lang.reflect.Array;
 import java.util.Iterator;
 
 public class ConfigArrayReference<T> extends ConfigReference<Object> implements Iterable<T> {
     private int size;
-    private boolean forceSize;
     
-    public ConfigArrayReference(String location, int size, boolean forceSize, IConfigSerializer<? extends T> serializer) {
-        super(location, ConfigSerializers.forArray(serializer, size, forceSize));
-        this.size = size;
-        this.forceSize = forceSize;
+    public ConfigArrayReference(String location, ArrayConfigSerializer<T, ?> serializer) {
+        //noinspection unchecked
+        super(location, (IConfigSerializer<Object>) serializer);
+        size = serializer.getArraySize();
     }
     
-    public ConfigArrayReference(String location, int size, IConfigSerializer<? extends T> serializer) {
-        this(location, size, true, serializer);
+    public ConfigArrayReference(String location, ArrayConfigSerializer<T, ?> serializer, Object defaultValue) {
+        this(location, serializer);
+        setDefaultValue(defaultValue);
     }
     
-    public ConfigArrayReference(String location, IConfigSerializer<? extends T> serializer, Object defaultValue) {
-        this(location, Array.getLength(defaultValue), false, serializer);
-        // assert serializer.type() == defaultValue.getClass().getComponentType()
-        this.value = defaultValue;
+    public ConfigArrayReference(String location, IConfigSerializer<T> serializer, int size, boolean forceSize) {
+        this(location, ConfigSerializers.forArray(serializer, size, forceSize));
+    }
+    
+    public ConfigArrayReference(String location, IConfigSerializer<T> serializer, int size, boolean forceSize, Object defaultValue) {
+        this(location, ConfigSerializers.forArray(serializer, size, forceSize), defaultValue);
+    }
+    
+    @Override
+    public void setDefaultValue(Object defaultValue) {
+        if (defaultValue.getClass() != getArraySerializer().getArrayClass()) {
+            throw new IllegalArgumentException();
+        }
+        super.setDefaultValue(defaultValue);
     }
     
     @Override
     public void load(ConfigurationSection section, ConfigLogging logger) {
         super.load(section, logger);
-        if (!forceSize) {
-            size = Array.getLength(value);
+        if (!isForceSize()) {
+            size = getArraySerializer().sizeOf(value);
         }
     }
     
     @Override
-    public IConfigSerializer<?> getSerializer() {
-        return ((DelegatedConfigSerializer<?, ?, ?>) serializer).getDelegate();
+    public ArrayConfigSerializer<T, Object> getSerializer() {
+        return getArraySerializer();
     }
     
     @Override
-    public void setSerializer(IConfigSerializer<?> serializer) {
-        this.serializer = ConfigSerializers.forArray(serializer, size, forceSize);
+    public void setSerializer(IConfigSerializer<Object> serializer) {
+        if (!(serializer instanceof ArrayConfigSerializer)) {
+            throw new IllegalArgumentException();
+        }
+        super.setSerializer(serializer);
+    }
+    
+    public ArrayConfigSerializer<T, Object> getArraySerializer() {
+        return ((ArrayConfigSerializer<T, Object>) serializer);
     }
     
     public T objAt(int idx) {
@@ -92,14 +107,14 @@ public class ConfigArrayReference<T> extends ConfigReference<Object> implements 
         return size;
     }
     
-    public boolean isForcedSize() {
-        return forceSize;
+    public boolean isForceSize() {
+        return getArraySerializer().isForceSize();
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public Iterator<T> iterator() {
-        return ((ArrayConfigSerializer<T, Object>) serializer).iterator(value);
+        return getArraySerializer().iterator(value);
     }
     
 }

@@ -52,10 +52,18 @@ public class ConfigSerializers {
         return defaultValue == null ? forString() : new StringSerializer(defaultValue);
     }
     
+    public static IConfigSerializer<Double> forChance() {
+        return forChance(0);
+    }
+    
+    public static IConfigSerializer<Double> forChance(double defaultChance) {
+        return forDouble(defaultChance).map(DoubleAsChanceMapper.instance);
+    }
+    
     @SuppressWarnings("unchecked")
-    public static <TComp, TArray> IConfigSerializer<TArray> forArray(IConfigSerializer<TComp> delegate, int size, boolean forceSize) {
+    public static <TComp, TArray> ArrayConfigSerializer<TComp, TArray> forArray(IConfigSerializer<TComp> delegate, int size, boolean forceSize) {
         Class<TComp> type = delegate.type();
-        IConfigSerializer<?> rv;
+        ArrayConfigSerializer<?, ?> rv;
         if (type.isPrimitive()) {
             if (type == Integer.TYPE) {
                 rv = new ArrayConfigSerializer.OfInt((IConfigSerializer<Integer>) delegate, size, forceSize);
@@ -72,7 +80,7 @@ public class ConfigSerializers {
         } else {
             rv = new ArrayConfigSerializer.OfReference<>(delegate, size, forceSize);
         }
-        return (IConfigSerializer<TArray>) rv;
+        return (ArrayConfigSerializer<TComp, TArray>) rv;
     }
     
     ////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +94,7 @@ public class ConfigSerializers {
         }
     
         @Override
-        public SerializerResult<Boolean> loadResult(Object source, ConfigLogging logger) {
+        public SerializerResult<Boolean> load(Object source, ConfigLogging logger) {
             Boolean rv = null;
             if (source instanceof Boolean) {
                 rv = (Boolean) source;
@@ -189,7 +197,7 @@ public class ConfigSerializers {
         }
     
         @Override
-        public SerializerResult<String> loadResult(Object source, ConfigLogging logger) {
+        public SerializerResult<String> load(Object source, ConfigLogging logger) {
             if (source == null) {
                 logger.error("Expected string");
                 return defaultValueResult();
@@ -197,6 +205,25 @@ public class ConfigSerializers {
             return new SerializerResult<>(source.toString());
         }
         
+    }
+    
+    private static final class DoubleAsChanceMapper implements IConfigSerializerMapper<Double, Double> {
+        private static final DoubleAsChanceMapper instance = new DoubleAsChanceMapper();
+        
+        @Override
+        public SerializerResult<Double> postLoad(SerializerResult<Double> in) {
+            return new SerializerResult<>(in.value / 100, in.isDefault);
+        }
+        
+        @Override
+        public Double preSave(Double value) {
+            return value * 100;
+        }
+        
+        @Override
+        public Class<Double> type() {
+            return Double.TYPE;
+        }
     }
 
 }

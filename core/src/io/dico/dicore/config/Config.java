@@ -12,7 +12,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public final class Config {
+public class Config {
     private final Logging logger;
     private final File file;
     private final Collection<ConfigEntry> configEntries = new ArrayList<>();
@@ -22,8 +22,9 @@ public final class Config {
         this.file = file;
     }
     
-    public void addConfigEntry(ConfigEntry entry) {
+    public <T extends ConfigEntry> T add(T entry) {
         configEntries.add(entry);
+        return entry;
     }
     
     public void loadFromStream(InputStream stream) throws IOException, InvalidConfigurationException {

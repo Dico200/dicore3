@@ -2,15 +2,15 @@ package io.dico.dicore.config.serializers;
 
 import io.dico.dicore.config.ConfigLogging;
 
-abstract class MappedSerializer<TIn, TOut> extends DelegatedConfigSerializer<TIn, TOut, BaseConfigSerializer<TIn>> {
+public abstract class MappedSerializer<TIn, TOut> extends DelegatedConfigSerializer<TIn, TOut, BaseConfigSerializer<TIn>> {
     
-    MappedSerializer(BaseConfigSerializer<TIn> delegate) {
+    public MappedSerializer(BaseConfigSerializer<TIn> delegate) {
         super(delegate);
     }
     
     @Override
-    public SerializerResult<TOut> loadResult(Object source, ConfigLogging logger) {
-        return postLoad(delegate.loadResult(source, logger));
+    public SerializerResult<TOut> load(Object source, ConfigLogging logger) {
+        return postLoad(delegate.load(source, logger));
     }
     
     @Override

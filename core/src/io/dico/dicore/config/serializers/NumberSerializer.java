@@ -9,7 +9,7 @@ abstract class NumberSerializer<T extends Number> extends SimpleConfigSerializer
     }
     
     @Override
-    public SerializerResult<T> loadResult(Object source, ConfigLogging logger) {
+    public SerializerResult<T> load(Object source, ConfigLogging logger) {
         T rv;
         if (source instanceof Number) {
             rv = select((Number) source);

@@ -18,8 +18,20 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         this.arrayClass = (Class<TArray>) newArray(0).getClass();
     }
     
+    public int getArraySize() {
+        return arraySize;
+    }
+    
+    public boolean isForceSize() {
+        return forceSize;
+    }
+    
+    public Class<TArray> getArrayClass() {
+        return arrayClass;
+    }
+    
     @Override
-    public SerializerResult<TArray> loadResult(Object source, ConfigLogging logger) {
+    public SerializerResult<TArray> load(Object source, ConfigLogging logger) {
         if (!(source instanceof Collection)) {
             if (forceSize) {
                 logger.error("should be a collection of size " + arraySize);
@@ -44,7 +56,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
             if (i >= n) break;
         
             logger.enterIndexPrefix(i);
-            TComp value = delegate.load(obj, logger);
+            TComp value = delegate.load(obj, logger).value;
             logger.exitPrefix();
         
             set(rv, i, value);
@@ -86,15 +98,15 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         return rv;
     }
     
-    protected abstract TArray newArray(int size);
+    public abstract TArray newArray(int size);
     
-    protected abstract int sizeOf(TArray array);
+    public abstract int sizeOf(TArray array);
     
-    protected abstract TComp get(TArray array, int index);
+    public abstract TComp get(TArray array, int index);
     
-    protected abstract void set(TArray array, int index, TComp value);
+    public abstract void set(TArray array, int index, TComp value);
     
-    protected abstract void fill(TArray array, TComp value);
+    public abstract void fill(TArray array, TComp value);
     
     public Iterator<TComp> iterator(TArray array) {
         return new ArrayIterator<>(this, array);
@@ -112,28 +124,28 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         }
     
         @Override
-        protected T[] newArray(int size) {
+        public T[] newArray(int size) {
             //noinspection unchecked
             return (T[]) Array.newInstance(delegate.type(), size);
         }
     
         @Override
-        protected int sizeOf(T[] array) {
+        public int sizeOf(T[] array) {
             return array.length;
         }
     
         @Override
-        protected T get(T[] array, int index) {
+        public T get(T[] array, int index) {
             return array[index];
         }
     
         @Override
-        protected void set(T[] array, int index, T value) {
+        public void set(T[] array, int index, T value) {
             array[index] = value;
         }
     
         @Override
-        protected void fill(T[] array, T value) {
+        public void fill(T[] array, T value) {
             Arrays.fill(array, value);
         }
     }
@@ -145,27 +157,27 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         }
     
         @Override
-        protected int[] newArray(int size) {
+        public int[] newArray(int size) {
             return new int[size];
         }
     
         @Override
-        protected int sizeOf(int[] array) {
+        public int sizeOf(int[] array) {
             return array.length;
         }
     
         @Override
-        protected Integer get(int[] array, int index) {
+        public Integer get(int[] array, int index) {
             return array[index];
         }
     
         @Override
-        protected void set(int[] array, int index, Integer value) {
+        public void set(int[] array, int index, Integer value) {
             array[index] = value;
         }
     
         @Override
-        protected void fill(int[] array, Integer value) {
+        public void fill(int[] array, Integer value) {
             Arrays.fill(array, value);
         }
     }
@@ -177,27 +189,27 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         }
     
         @Override
-        protected boolean[] newArray(int size) {
+        public boolean[] newArray(int size) {
             return new boolean[size];
         }
     
         @Override
-        protected int sizeOf(boolean[] array) {
+        public int sizeOf(boolean[] array) {
             return array.length;
         }
     
         @Override
-        protected Boolean get(boolean[] array, int index) {
+        public Boolean get(boolean[] array, int index) {
             return array[index];
         }
     
         @Override
-        protected void set(boolean[] array, int index, Boolean value) {
+        public void set(boolean[] array, int index, Boolean value) {
             array[index] = value;
         }
     
         @Override
-        protected void fill(boolean[] array, Boolean value) {
+        public void fill(boolean[] array, Boolean value) {
             Arrays.fill(array, value);
         }
         
@@ -210,27 +222,27 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         }
     
         @Override
-        protected long[] newArray(int size) {
+        public long[] newArray(int size) {
             return new long[size];
         }
     
         @Override
-        protected int sizeOf(long[] array) {
+        public int sizeOf(long[] array) {
             return array.length;
         }
         
         @Override
-        protected Long get(long[] array, int index) {
+        public Long get(long[] array, int index) {
             return array[index];
         }
         
         @Override
-        protected void set(long[] array, int index, Long value) {
+        public void set(long[] array, int index, Long value) {
             array[index] = value;
         }
     
         @Override
-        protected void fill(long[] array, Long value) {
+        public void fill(long[] array, Long value) {
             Arrays.fill(array, value);
         }
         
@@ -243,27 +255,27 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         }
     
         @Override
-        protected float[] newArray(int size) {
+        public float[] newArray(int size) {
             return new float[size];
         }
     
         @Override
-        protected int sizeOf(float[] array) {
+        public int sizeOf(float[] array) {
             return array.length;
         }
         
         @Override
-        protected Float get(float[] array, int index) {
+        public Float get(float[] array, int index) {
             return array[index];
         }
         
         @Override
-        protected void set(float[] array, int index, Float value) {
+        public void set(float[] array, int index, Float value) {
             array[index] = value;
         }
     
         @Override
-        protected void fill(float[] array, Float value) {
+        public void fill(float[] array, Float value) {
             Arrays.fill(array, value);
         }
         
@@ -276,27 +288,27 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         }
     
         @Override
-        protected double[] newArray(int size) {
+        public double[] newArray(int size) {
             return new double[size];
         }
     
         @Override
-        protected int sizeOf(double[] array) {
+        public int sizeOf(double[] array) {
             return array.length;
         }
         
         @Override
-        protected Double get(double[] array, int index) {
+        public Double get(double[] array, int index) {
             return array[index];
         }
         
         @Override
-        protected void set(double[] array, int index, Double value) {
+        public void set(double[] array, int index, Double value) {
             array[index] = value;
         }
     
         @Override
-        protected void fill(double[] array, Double value) {
+        public void fill(double[] array, Double value) {
             Arrays.fill(array, value);
         }
         
@@ -309,7 +321,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         private int index;
         private int size;
         
-        protected ArrayIterator(ArrayConfigSerializer<TComp, TArray> ser, TArray array) {
+        public ArrayIterator(ArrayConfigSerializer<TComp, TArray> ser, TArray array) {
             this.ser = ser;
             this.array = array;
             this.size = ser.sizeOf(array);
