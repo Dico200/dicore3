@@ -17,6 +17,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.projectiles.ProjectileSource;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -131,6 +132,37 @@ public class SpigotUtil {
             List list = (List) object;
             for (Object entry : list) {
                 builder.append(asJsonString(null, entry, indentation + 1));
+            }
+            builder.append(indent).append("]");
+        } else {
+            builder.append(String.valueOf(object));
+        }
+        return builder.append(",\n").toString();
+    }
+    
+    public static String asJsonString(String key, Object object, int indentation, BiConsumer<List<?>, StringBuilder> listHeader) {
+        String indent = new String(new char[indentation * 2]).replace('\0', ' ');
+        StringBuilder builder = new StringBuilder(indent);
+        if (key != null) {
+            builder.append(key).append(": ");
+        }
+        if (object instanceof ConfigurationSerializable) {
+            object = ((ConfigurationSerializable) object).serialize();
+        }
+        if (object instanceof Map) {
+            builder.append("{\n");
+            Map<?, ?> map = (Map) object;
+            for (Map.Entry entry : map.entrySet()) {
+                builder.append(asJsonString(String.valueOf(entry.getKey()), entry.getValue(), indentation + 1, listHeader));
+            }
+            builder.append(indent).append("}");
+        } else if (object instanceof List) {
+            builder.append("[");
+            List list = (List) object;
+            listHeader.accept(list, builder);
+            builder.append("\n");
+            for (Object entry : list) {
+                builder.append(asJsonString(null, entry, indentation + 1, listHeader));
             }
             builder.append(indent).append("]");
         } else {

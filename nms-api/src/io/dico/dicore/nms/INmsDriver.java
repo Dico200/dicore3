@@ -102,4 +102,12 @@ public interface INmsDriver {
      */
     Item dropItemNaturally(Block block, ItemStack item);
     
+    /**
+     * Get a string representation of the object with additional information about
+     * INbtList element types.
+     *
+     * @param obj the obj that represents the data
+     * @return a json string representation
+     */
+    String asJsonString(Object obj);
 }

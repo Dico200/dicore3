@@ -1,5 +1,6 @@
 package io.dico.dicore.nms.v1_8_R3;
 
+import io.dico.dicore.SpigotUtil;
 import io.dico.dicore.nbt.INbtList;
 import io.dico.dicore.nbt.INbtMap;
 import io.dico.dicore.nms.IEntityDriver;
@@ -113,6 +114,15 @@ final class NmsDriver implements INmsDriver {
         CraftItem rv = new CraftItem(world.getServer(), item);
         EntityDriver._setBukkitEntity(item, rv);
         return rv;
+    }
+    
+    @Override
+    public String asJsonString(Object obj) {
+        return SpigotUtil.asJsonString(null, obj, 0, (list, builder) -> {
+            if (list instanceof INbtList) {
+                builder.append(" etype: ").append(((INbtList) list).getElementType());
+            }
+        });
     }
     
 }

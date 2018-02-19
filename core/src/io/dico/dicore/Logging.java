@@ -65,7 +65,7 @@ public interface Logging {
     }
     
     class SubLogging implements Logging {
-        private final String prefix;
+        protected String prefix;
         private final Logging superLogger;
         private boolean debugging;
         
