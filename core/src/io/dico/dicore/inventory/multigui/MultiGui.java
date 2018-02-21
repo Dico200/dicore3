@@ -7,7 +7,6 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Collection;
@@ -161,16 +160,18 @@ public class MultiGui {
     
     protected void onInventoryDrag(InventoryDragEvent event) {
         Inventory inventory = this.inventory;
+        if (!inventory.equals(event.getView().getTopInventory())) {
+            return;
+        }
+        
         Map<Integer, ItemStack> newItems = event.getNewItems();
-        InventoryView view = event.getView();
         for (Map.Entry<Integer, ItemStack> entry : newItems.entrySet()) {
             int rawSlot = entry.getKey();
-            int slot = view.convertSlot(rawSlot);
-            if (slot != rawSlot) {
+            if (rawSlot >= inventory.getSize()) {
                 // change in the bottom inventory
                 continue;
             }
-            if (!onSlotChange(event, slot, inventory.getItem(slot), entry.getValue())) {
+            if (!onSlotChange(event, rawSlot, inventory.getItem(rawSlot), entry.getValue())) {
                 break;
             }
         }
