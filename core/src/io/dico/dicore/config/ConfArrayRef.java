@@ -7,25 +7,25 @@ import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.Iterator;
 
-public class ConfigArrayReference<T> extends ConfigReference<Object> implements Iterable<T> {
+public class ConfArrayRef<T> extends ConfRef<Object> implements Iterable<T> {
     private int size;
     
-    public ConfigArrayReference(String location, ArrayConfigSerializer<T, ?> serializer) {
+    public ConfArrayRef(String location, ArrayConfigSerializer<T, ?> serializer) {
         //noinspection unchecked
         super(location, (IConfigSerializer<Object>) serializer);
         size = serializer.getArraySize();
     }
     
-    public ConfigArrayReference(String location, ArrayConfigSerializer<T, ?> serializer, Object defaultValue) {
+    public ConfArrayRef(String location, ArrayConfigSerializer<T, ?> serializer, Object defaultValue) {
         this(location, serializer);
         setDefaultValue(defaultValue);
     }
     
-    public ConfigArrayReference(String location, IConfigSerializer<T> serializer, int size, boolean forceSize) {
+    public ConfArrayRef(String location, IConfigSerializer<T> serializer, int size, boolean forceSize) {
         this(location, ConfigSerializers.forArray(serializer, size, forceSize));
     }
     
-    public ConfigArrayReference(String location, IConfigSerializer<T> serializer, int size, boolean forceSize, Object defaultValue) {
+    public ConfArrayRef(String location, IConfigSerializer<T> serializer, int size, boolean forceSize, Object defaultValue) {
         this(location, ConfigSerializers.forArray(serializer, size, forceSize), defaultValue);
     }
     

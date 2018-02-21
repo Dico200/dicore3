@@ -83,7 +83,8 @@ public class MultiGui {
     }
     
     private boolean onSlotChange(InventoryInteractEvent event, int slot, ItemStack oldItem, ItemStack newItem) {
-        if (SpigotUtil.isItemPresent(oldItem) ? oldItem.equals(newItem) : !SpigotUtil.isItemPresent(newItem)) {
+        if (computeNewItem &&
+                (SpigotUtil.isItemPresent(oldItem) ? oldItem.equals(newItem) : !SpigotUtil.isItemPresent(newItem))) {
             return Allow;
         }
         if (!allowSlotChange(event, slot, oldItem, newItem)) {

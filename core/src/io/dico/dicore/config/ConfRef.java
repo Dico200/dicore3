@@ -6,30 +6,34 @@ import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.Objects;
 
-public class ConfigReference<T> implements ConfigEntry {
+public class ConfRef<T> implements ConfigEntry {
     protected final String location;
     protected IConfigSerializer<T> serializer;
     protected boolean hasDefaultValue;
     protected T defaultValue;
     protected T value;
     
-    protected ConfigReference(String location) {
+    protected ConfRef(String location) {
         Objects.requireNonNull(location);
         this.location = location;
     }
     
-    public ConfigReference(String location, IConfigSerializer<T> serializer) {
+    public ConfRef(String location, IConfigSerializer<T> serializer) {
         this(location);
         this.serializer = serializer;
     }
     
-    public ConfigReference(String location, IConfigSerializer<T> serializer, T defaultValue) {
+    public ConfRef(String location, IConfigSerializer<T> serializer, T defaultValue) {
         this(location, serializer);
         setDefaultValue(defaultValue);
     }
     
     public final T getValue() {
         return value;
+    }
+    
+    public void setValue(T value) {
+        this.value = value;
     }
     
     @Override
@@ -49,7 +53,7 @@ public class ConfigReference<T> implements ConfigEntry {
         try {
             Object source = section.get(location);
             SerializerResult<T> result = serializer.load(source, logger);
-            value = result.isDefault && hasDefaultValue ? defaultValue : result.value;
+            setValue(result.isDefault && hasDefaultValue ? defaultValue : result.value);
         } finally {
             logger.exitPrefix();
             logger.exitPrefix();
