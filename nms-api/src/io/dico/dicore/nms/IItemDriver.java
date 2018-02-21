@@ -2,6 +2,8 @@ package io.dico.dicore.nms;
 
 import io.dico.dicore.nbt.INbtMap;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -155,5 +157,16 @@ public interface IItemDriver {
      * @param type the type
      */
     void setType(ItemStack item, Material type);
+    
+    /**
+     * Trigger the onBlockDestroyed method of nms itemstack.
+     *
+     * @param item
+     * @param player the player
+     * @param block  the block
+     * @param type   the block's type, or custom
+     * @return the item that should be the player's hand after this call
+     */
+    ItemStack onBlockDestroyed(ItemStack item, Player player, Block block, Material type);
     
 }

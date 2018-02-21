@@ -3,12 +3,15 @@ package io.dico.dicore.nms.v1_8_R3;
 import io.dico.dicore.Reflection;
 import io.dico.dicore.nbt.INbtMap;
 import io.dico.dicore.nms.IItemDriver;
-import net.minecraft.server.v1_8_R3.Blocks;
-import net.minecraft.server.v1_8_R3.NBTTagCompound;
+import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_8_R3.util.CraftMagicNumbers;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -23,6 +26,13 @@ final class ItemDriver implements IItemDriver {
             Bukkit.getItemFactory().getItemMeta(Material.STONE).getClass(),
             "applyToItem",
             NBTTagCompound.class);
+    
+    static net.minecraft.server.v1_8_R3.ItemStack getHandle(ItemStack item) {
+        if (item instanceof CraftItemStack) {
+            return getPresentHandle((CraftItemStack) item);
+        }
+        return CraftItemStack.asNMSCopy(item);
+    }
     
     static net.minecraft.server.v1_8_R3.ItemStack getPresentHandle(CraftItemStack item) {
         net.minecraft.server.v1_8_R3.ItemStack result = Reflection.getFieldValue(itemHandleField, item);
@@ -151,6 +161,24 @@ final class ItemDriver implements IItemDriver {
     
         net.minecraft.server.v1_8_R3.ItemStack handle = getPresentHandle((CraftItemStack) item);
         handle.setItem(CraftMagicNumbers.getItem(type));
+    }
+    
+    @Override
+    public ItemStack onBlockDestroyed(ItemStack item, Player player, Block block, Material type) {
+        if (item == null) {
+            return null;
+        }
+        
+        net.minecraft.server.v1_8_R3.ItemStack itemHandle = getHandle(item);
+        
+        net.minecraft.server.v1_8_R3.Block typeHandle = CraftMagicNumbers.getBlock(type);
+        WorldServer worldHandle = ((CraftWorld) block.getWorld()).getHandle();
+        BlockPosition blockPos = new BlockPosition(block.getX(), block.getY(), block.getZ());
+        EntityPlayer playerHandle = ((CraftPlayer) player).getHandle();
+    
+        itemHandle.a(worldHandle, typeHandle, blockPos, playerHandle);
+    
+        return itemHandle.count == 0 ? null : CraftItemStack.asCraftMirror(itemHandle);
     }
     
 }
