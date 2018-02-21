@@ -170,6 +170,9 @@ final class ItemDriver implements IItemDriver {
         }
         
         net.minecraft.server.v1_8_R3.ItemStack itemHandle = getHandle(item);
+        if (itemHandle.getItem() == null) {
+            return item;
+        }
         
         net.minecraft.server.v1_8_R3.Block typeHandle = CraftMagicNumbers.getBlock(type);
         WorldServer worldHandle = ((CraftWorld) block.getWorld()).getHandle();
