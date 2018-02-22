@@ -9,7 +9,7 @@ public interface IAnvilEnchantmentListener {
 
     void onEnchantmentsComputed(ComputeContext ctx);
     
-    public static class ComputeContext {
+    public static final class ComputeContext {
         public final ItemStack inputItem1;
         public final ItemStack inputItem2;
         public ItemStack resultItem;
@@ -38,8 +38,16 @@ public interface IAnvilEnchantmentListener {
             this.itemWearCost = itemWearCost;
             this.maxCost = maxCost;
         }
+        
+        public int getCostOfChanges() {
+            int rv = 0;
+            for (EnchantmentChange change : changes.values()) {
+                rv += change == null ? 0 : change.cost;
+            }
+            return rv;
+        }
     
-        public static class EnchantmentChange {
+        public static final class EnchantmentChange {
             public final Enchantment enchantment;
             public final int oldLevel;
             public int newLevel;

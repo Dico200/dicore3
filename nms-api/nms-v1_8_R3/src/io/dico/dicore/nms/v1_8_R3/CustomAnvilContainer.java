@@ -31,6 +31,12 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
     private List<SimpleListener<IAnvilInventoryHandle>> updateListeners;
     private IAnvilEnchantmentListener anvilEnchantmentListener;
     
+    private boolean checkLastInputItems = false;
+    private ItemStack lastInputItem1 = null;
+    private ItemStack lastInputItem2 = null;
+    private int lastTickUpdated;
+    private int sendUpdatesInDelay = -1;
+    
     CustomAnvilContainer(PlayerInventory inv, World world, BlockPosition blockPosIn, EntityHuman player) {
         super(inv, world, blockPosIn, player);
         this.thePlayer = player;
@@ -156,6 +162,13 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
     @Override
     public void e() {
         ItemStack inputItem1 = getItem(0);
+        ItemStack inputItem2 = getItem(1);
+        // added to attempt to make it less buggy
+        if (checkLastInputItems && ItemStack.equals(lastInputItem1, inputItem1) && ItemStack.equals(inputItem2, lastInputItem2)) {
+            return;
+        }
+        // end
+        
         setCost(1);
         int baseRepairCost = 0;
         int repairCostFromItemWear = 0;
@@ -172,7 +185,7 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
             setCost(0);
         } else {
             ItemStack resultItem = inputItem1.cloneItemStack();
-            ItemStack inputItem2 = getItem(1);
+            
             Map<Integer, Integer> enchantments = EnchantmentManager.a(resultItem);
             boolean isEnchantedBook;
             repairCostFromItemWear = repairCostFromItemWear + inputItem1.getRepairCost() + (inputItem2 == null ? 0 : inputItem2.getRepairCost());
@@ -193,6 +206,7 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
                     if (itemDamageQuarter <= 0) {
                         outputInventory.setItem(0, null);
                         setCost(0);
+                        sendUpdates();
                         return;
                     }
                     
@@ -208,7 +222,7 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
                     setMaterialCost(materialCost);
                 } else {
                     if (!isEnchantedBook && (resultItem.getItem() != inputItem2.getItem() || !resultItem.e())) {
-                        outputInventory.setItem(0, (ItemStack) null);
+                        outputInventory.setItem(0, null);
                         setCost(0);
                         return;
                     }
@@ -421,16 +435,55 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
             for (SimpleListener<IAnvilInventoryHandle> updateListener : updateListeners) {
                 updateListener.accept(this);
             }
-    
+            
             // b() --> detectAndSendChanges()
             this.b();
-            
-            // added this because the client is extrapolating the result, and the server never sends it normally
-            if (thePlayer instanceof EntityPlayer) {
-                EntityPlayer p = (EntityPlayer) thePlayer;
-                p.updateInventory(p.activeContainer);
-                p.setContainerData(this, 0, getCost());
+            sendUpdates();
+        }
+    }
+    
+    @Override
+    public void a(String s) {
+        checkLastInputItems = false;
+        super.a(s);
+    }
+    
+    private void sendUpdates() {
+        lastInputItem1 = getItem(0);
+        lastInputItem2 = getItem(1);
+        checkLastInputItems = true;
+        
+        // added this because the client is extrapolating the result, and the server never sends it normally
+        sendData();
+        sendUpdatesInDelay = 0;
+    }
+    
+    private void sendData() {
+        if (thePlayer instanceof EntityPlayer) {
+            EntityPlayer p = (EntityPlayer) thePlayer;
+            p.playerConnection.sendPacket(new PacketPlayOutSetSlot(windowId, 2, outputInventory.getItem(2)));
+            p.playerConnection.sendPacket(new PacketPlayOutWindowData(windowId, 0, getCost()));
+        }
+    }
+    
+    // Called every tick the container is open. Checks if the player can interact with the container (by checking the positions)
+    @Override
+    public boolean a(EntityHuman entityhuman) {
+        int tick = MinecraftServer.currentTick;
+        if (tick != lastTickUpdated) {
+            lastTickUpdated = tick;
+            tick();
+        }
+        
+        return super.a(entityhuman);
+    }
+    
+    private void tick() {
+        if (sendUpdatesInDelay >= 0) {
+            if (sendUpdatesInDelay == 0) {
+                sendData();
             }
+            sendUpdatesInDelay--;
         }
     }
     
