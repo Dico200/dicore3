@@ -3,10 +3,7 @@ package io.dico.dicore.nms.v1_8_R3;
 import io.dico.dicore.SpigotUtil;
 import io.dico.dicore.nbt.INbtList;
 import io.dico.dicore.nbt.INbtMap;
-import io.dico.dicore.nms.IEntityDriver;
-import io.dico.dicore.nms.IItemDriver;
-import io.dico.dicore.nms.INmsDriver;
-import io.dico.dicore.nms.IWorldDriver;
+import io.dico.dicore.nms.*;
 import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -30,6 +27,7 @@ final class NmsDriver implements INmsDriver {
     private static final int tickOffset = -MinecraftServer.currentTick;
     private static final IEntityDriver entityDriver = new EntityDriver();
     private static final IItemDriver itemDriver = new ItemDriver();
+    private static final IInventoryDriver inventoryDriver = new InventoryDriver();
     
     public NmsDriver() {
     }
@@ -84,6 +82,11 @@ final class NmsDriver implements INmsDriver {
     @Override
     public IItemDriver getItemDriver() {
         return itemDriver;
+    }
+    
+    @Override
+    public IInventoryDriver getInventoryDriver() {
+        return inventoryDriver;
     }
     
     @Override

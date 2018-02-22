@@ -45,6 +45,11 @@ public interface INmsDriver {
     IItemDriver getItemDriver();
     
     /**
+     * @return The (@link IInventoryDriver} implementation
+     */
+    IInventoryDriver getInventoryDriver();
+    
+    /**
      * Wraps a new nms NBT Tag Compound
      *
      * @return A new nbt map with a wrapper implementation

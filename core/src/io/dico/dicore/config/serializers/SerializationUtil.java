@@ -72,6 +72,12 @@ public class SerializationUtil {
         return val == Boolean.TRUE || "true".equals(val);
     }
     
+    public static Boolean getBoolean(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        if (val == null) return null;
+        return val == Boolean.TRUE || "true".equals(val);
+    }
+    
     public static String getString(Map<String, Object> map, String key, String def) {
         Object val = map.get(key);
         if (val == null) return def;

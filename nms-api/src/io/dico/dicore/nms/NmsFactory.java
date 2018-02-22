@@ -141,6 +141,16 @@ public final class NmsFactory {
     }
     
     /**
+     * Get the inventory driver.
+     * This is a shortcut for {@code NmsFactory.getDriver().getInventoryDriver()}.
+     *
+     * @return the inventory driver
+     */
+    public static IInventoryDriver getInventoryDriver() {
+        return driver.getInventoryDriver();
+    }
+    
+    /**
      * Gets the {@link IWorldDriver} for the given world
      * <p>
      * <i>An NWorld supplies world-specific data and methods</i>
