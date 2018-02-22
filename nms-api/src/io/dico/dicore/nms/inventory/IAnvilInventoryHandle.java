@@ -1,9 +1,15 @@
 package io.dico.dicore.nms.inventory;
 
 import io.dico.dicore.event.SimpleListener;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
 public interface IAnvilInventoryHandle {
+    
+    HumanEntity getViewer();
+    
+    InventoryView getView();
     
     ItemStack getLeftInputItem();
     

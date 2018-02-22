@@ -3,17 +3,22 @@ package io.dico.dicore.nms.v1_8_R3;
 import io.dico.dicore.Reflection;
 import io.dico.dicore.event.SimpleListener;
 import io.dico.dicore.nms.inventory.IAnvilEnchantmentListener;
+import io.dico.dicore.nms.inventory.IAnvilEnchantmentListener.ComputeContext.EnchantmentChange;
 import io.dico.dicore.nms.inventory.IAnvilInventoryHandle;
 import net.minecraft.server.v1_8_R3.*;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.InventoryView;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInventoryHandle {
+    private static final Field anvilOutputItemsField = Reflection.restrictedSearchField(ContainerAnvil.class,"g");
     private static final Field anvilItemNameField = Reflection.restrictedSearchField(ContainerAnvil.class, "l");
     private static final Field anvilMaterialCostField = Reflection.restrictedSearchField(ContainerAnvil.class, "k");
     private static final Field anvilPlayerInventoryField = Reflection.restrictedSearchField(ContainerAnvil.class, "player");
@@ -22,12 +27,14 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
     private static final Field anvilPlayerField = Reflection.restrictedSearchField(ContainerAnvil.class, "m");
     
     private EntityHuman thePlayer;
+    private InventoryCraftResult outputInventory;
     private List<SimpleListener<IAnvilInventoryHandle>> updateListeners;
     private IAnvilEnchantmentListener anvilEnchantmentListener;
     
     CustomAnvilContainer(PlayerInventory inv, World world, BlockPosition blockPosIn, EntityHuman player) {
         super(inv, world, blockPosIn, player);
         this.thePlayer = player;
+        this.outputInventory = Reflection.getFieldValue(anvilOutputItemsField, this);
         this.updateListeners = new ArrayList<>();
     }
     
@@ -64,6 +71,16 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
     
     private void setBukkitItem(int index, org.bukkit.inventory.ItemStack bukkitItem) {
         setItem(index, ItemDriver.getHandle(bukkitItem));
+    }
+    
+    @Override
+    public HumanEntity getViewer() {
+        return thePlayer.getBukkitEntity();
+    }
+    
+    @Override
+    public InventoryView getView() {
+        return getBukkitView();
     }
     
     @Override
@@ -144,20 +161,26 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
         int repairCostFromItemWear = 0;
         int tempRepairCost = 0;
         
+        // added for api
+        int maxRepairCost = 39;
+        boolean updateEnchantments = true;
+        boolean increaseRepairCost = true;
+        // end
+        
         if (inputItem1 == null) {
-            setItem(0, null);
+            outputInventory.setItem(0, null);
             setCost(0);
         } else {
             ItemStack resultItem = inputItem1.cloneItemStack();
             ItemStack inputItem2 = getItem(1);
             Map<Integer, Integer> enchantments = EnchantmentManager.a(resultItem);
-            boolean flag = false;
+            boolean isEnchantedBook;
             repairCostFromItemWear = repairCostFromItemWear + inputItem1.getRepairCost() + (inputItem2 == null ? 0 : inputItem2.getRepairCost());
             setMaterialCost(0);
             
             if (inputItem2 != null) {
                 // Enchanted book with at least 1 stored enchantment
-                flag = inputItem2.getItem() == Items.ENCHANTED_BOOK && Items.ENCHANTED_BOOK.h(inputItem2).size() > 0;
+                isEnchantedBook = inputItem2.getItem() == Items.ENCHANTED_BOOK && Items.ENCHANTED_BOOK.h(inputItem2).size() > 0;
                 
                 // e() --> isItemStackDamageable()
                 // a(ItemStack, ItemStack) --> getIsRepairable()
@@ -168,7 +191,7 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
                     int itemDamageQuarter = Math.min(resultItem.h(), resultItem.j() / 4);
                     
                     if (itemDamageQuarter <= 0) {
-                        setItem(0, null);
+                        outputInventory.setItem(0, null);
                         setCost(0);
                         return;
                     }
@@ -184,13 +207,13 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
                     
                     setMaterialCost(materialCost);
                 } else {
-                    if (!flag && (resultItem.getItem() != inputItem2.getItem() || !resultItem.e())) {
-                        setItem(0, (ItemStack) null);
+                    if (!isEnchantedBook && (resultItem.getItem() != inputItem2.getItem() || !resultItem.e())) {
+                        outputInventory.setItem(0, (ItemStack) null);
                         setCost(0);
                         return;
                     }
                     
-                    if (resultItem.e() && !flag) {
+                    if (resultItem.e() && !isEnchantedBook) {
                         int k2 = inputItem1.j() - inputItem1.h();
                         int l2 = inputItem2.j() - inputItem2.h();
                         int i3 = l2 + resultItem.j() * 12 / 100;
@@ -207,6 +230,10 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
                             baseRepairCost += 2;
                         }
                     }
+                    
+                    // added for api
+                    Map<org.bukkit.enchantments.Enchantment, EnchantmentChange> changes = new HashMap<>();
+                    // end
                     
                     Map<Integer, Integer> addedEnchantments = EnchantmentManager.a(inputItem2);
                     
@@ -235,7 +262,7 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
                             
                             for (int presentEnchantmentId : enchantments.keySet()) {
                                 // a(Enchantment) --> canApplyTogether
-                                if ((presentEnchantmentId) != addedEnchantmentId && !enchantment.a(Enchantment.getById((presentEnchantmentId)))) {
+                                if (presentEnchantmentId != addedEnchantmentId && !enchantment.a(Enchantment.getById(presentEnchantmentId))) {
                                     canEnchant = false;
                                     ++baseRepairCost;
                                 }
@@ -246,16 +273,16 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
                                     addedLevel = enchantment.getMaxLevel();
                                 }
                                 
-                                enchantments.put(addedEnchantmentId, addedLevel);
-                                int l5 = 0;
+                                // enchantments.put(addedEnchantmentId, addedLevel);
+                                int levelCostMultiplier = 0;
                                 
                                 switch (enchantment.getRandomWeight()) {
                                     case 1:
-                                        l5 = 8;
+                                        levelCostMultiplier = 8;
                                         break;
                                     
                                     case 2:
-                                        l5 = 4;
+                                        levelCostMultiplier = 4;
                                     
                                     case 3:
                                     case 4:
@@ -267,28 +294,308 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
                                         break;
                                     
                                     case 5:
-                                        l5 = 2;
+                                        levelCostMultiplier = 2;
                                         break;
                                     
                                     case 10:
-                                        l5 = 1;
+                                        levelCostMultiplier = 1;
                                 }
                                 
-                                if (flag) {
-                                    l5 = Math.max(1, l5 / 2);
+                                if (isEnchantedBook) {
+                                    levelCostMultiplier = Math.max(1, levelCostMultiplier / 2);
                                 }
                                 
-                                baseRepairCost += l5 * addedLevel;
+                                int cost = levelCostMultiplier * addedLevel;
+                                // baseRepairCost += cost
+                                
+                                org.bukkit.enchantments.Enchantment bukkitEnchantment = org.bukkit.enchantments.Enchantment.getById(addedEnchantmentId);
+                                if (bukkitEnchantment != null) {
+                                    EnchantmentChange change = new EnchantmentChange(bukkitEnchantment, presentLevel, addedLevel, cost);
+                                    changes.put(bukkitEnchantment, change);
+                                }
                             }
                         }
                     }
                     
                     // added for api
                     if (anvilEnchantmentListener != null) {
-                        anvilEnchantmentListener.onEnchantmentsComputed(
+                        
+                        Map<org.bukkit.enchantments.Enchantment, Integer> levels = new HashMap<>();
+                        for (Map.Entry<Integer, Integer> entry : enchantments.entrySet()) {
+                            org.bukkit.enchantments.Enchantment enchantment = org.bukkit.enchantments.Enchantment.getById(entry.getKey());
+                            if (enchantment != null) {
+                                levels.put(enchantment, entry.getValue());
+                            }
+                        }
+                        
+                        CraftItemStack bukkitResult = CraftItemStack.asCraftMirror(resultItem);
+                        IAnvilEnchantmentListener.ComputeContext ctx = new IAnvilEnchantmentListener.ComputeContext(
                                 CraftItemStack.asCraftMirror(inputItem1),
                                 CraftItemStack.asCraftMirror(inputItem2),
-                                CraftItemStack.asCraftMirror(resultItem)
+                                bukkitResult,
+                                levels,
+                                changes,
+                                baseRepairCost,
+                                repairCostFromItemWear,
+                                maxRepairCost
+                        );
+                        
+                        anvilEnchantmentListener.onEnchantmentsComputed(ctx);
+                        
+                        if (bukkitResult != ctx.resultItem) {
+                            resultItem = ItemDriver.getHandle(ctx.resultItem);
+                            if (resultItem == null) {
+                                resultItem = new ItemStack((Item) null, 1, 0);
+                            }
+                        }
+                        
+                        baseRepairCost = ctx.baseCost;
+                        repairCostFromItemWear = ctx.itemWearCost;
+                        maxRepairCost = ctx.maxCost;
+                        updateEnchantments = ctx.updateEnchantments;
+                        increaseRepairCost = ctx.increaseRepairCost;
+                    }
+    
+                    for (EnchantmentChange change : changes.values()) {
+                        int id = change.enchantment.getId();
+                        enchantments.put(id, change.newLevel);
+                        baseRepairCost += change.cost;
+                    }
+                    
+                    // end
+                }
+            }
+            
+            String repairedItemName = getRepairedItemName();
+            if (StringUtils.isBlank(repairedItemName)) {
+                // hasName() --> hasDisplayName
+                if (inputItem1.hasName()) {
+                    tempRepairCost = 1;
+                    baseRepairCost += tempRepairCost;
+                    // r() --> clearCustomName
+                    resultItem.r();
+                }
+                // getName() --> getDisplayName
+            } else if (!repairedItemName.equals(inputItem1.getName())) {
+                tempRepairCost = 1;
+                baseRepairCost += tempRepairCost;
+                // c() --> setStackDisplayName
+                resultItem.c(repairedItemName);
+            }
+            
+            setCost(repairCostFromItemWear + baseRepairCost);
+            
+            if (baseRepairCost <= 0 || resultItem.getItem() == null) {
+                resultItem = null;
+            }
+            
+            if (tempRepairCost == baseRepairCost && tempRepairCost > 0 && getCost() > maxRepairCost) {
+                setCost(maxRepairCost);
+            }
+            
+            if (getCost() > maxRepairCost && !this.thePlayer.abilities.canInstantlyBuild) {
+                resultItem = null;
+            }
+            
+            if (resultItem != null) {
+                if (increaseRepairCost) {
+                    int k4 = resultItem.getRepairCost();
+    
+                    if (inputItem2 != null && k4 < inputItem2.getRepairCost()) {
+                        k4 = inputItem2.getRepairCost();
+                    }
+    
+                    k4 = k4 * 2 + 1;
+                    resultItem.setRepairCost(k4);
+                }
+                
+                if (updateEnchantments) {
+                    // a(Map<Integer, Integer>, ItemStack) --> setEnchantments
+                    EnchantmentManager.a(enchantments, resultItem);
+                }
+            }
+            
+            outputInventory.setItem(0, resultItem);
+            
+            // added for api
+            for (SimpleListener<IAnvilInventoryHandle> updateListener : updateListeners) {
+                updateListener.accept(this);
+            }
+    
+            // b() --> detectAndSendChanges()
+            this.b();
+            
+            // added this because the client is extrapolating the result, and the server never sends it normally
+            if (thePlayer instanceof EntityPlayer) {
+                EntityPlayer p = (EntityPlayer) thePlayer;
+                p.updateInventory(p.activeContainer);
+                p.setContainerData(this, 0, getCost());
+            }
+        }
+    }
+    
+    /*
+    
+    @Override
+    public void e() {
+        ItemStack inputItem1 = getItem(0);
+        setCost(1);
+        int baseRepairCost = 0;
+        int repairCostFromItemWear = 0;
+        int tempRepairCost = 0;
+        
+        if (inputItem1 == null) {
+            outputInventory.setItem(0, null);
+            setCost(0);
+        } else {
+            ItemStack resultItem = inputItem1.cloneItemStack();
+            ItemStack inputItem2 = getItem(1);
+            Map<Integer, Integer> enchantments = EnchantmentManager.a(resultItem);
+            boolean isEnchantedBook;
+            repairCostFromItemWear = repairCostFromItemWear + inputItem1.getRepairCost() + (inputItem2 == null ? 0 : inputItem2.getRepairCost());
+            setMaterialCost(0);
+            
+            if (inputItem2 != null) {
+                // Enchanted book with at least 1 stored enchantment
+                isEnchantedBook = inputItem2.getItem() == Items.ENCHANTED_BOOK && Items.ENCHANTED_BOOK.h(inputItem2).size() > 0;
+                
+                // e() --> isItemStackDamageable()
+                // a(ItemStack, ItemStack) --> getIsRepairable()
+                if (resultItem.e() && resultItem.getItem().a(inputItem1, inputItem2)) {
+                    
+                    // h() --> getItemDamage()
+                    // j() --> getMaxDamage()
+                    int itemDamageQuarter = Math.min(resultItem.h(), resultItem.j() / 4);
+                    
+                    if (itemDamageQuarter <= 0) {
+                        outputInventory.setItem(0, null);
+                        setCost(0);
+                        return;
+                    }
+                    
+                    int materialCost;
+                    
+                    for (materialCost = 0; itemDamageQuarter > 0 && materialCost < inputItem2.count; ++materialCost) {
+                        int newDamage = resultItem.h() - itemDamageQuarter;
+                        resultItem.setData(newDamage);
+                        ++baseRepairCost;
+                        itemDamageQuarter = Math.min(resultItem.h(), resultItem.j() / 4);
+                    }
+                    
+                    setMaterialCost(materialCost);
+                } else {
+                    if (!isEnchantedBook && (resultItem.getItem() != inputItem2.getItem() || !resultItem.e())) {
+                        outputInventory.setItem(0, (ItemStack) null);
+                        setCost(0);
+                        return;
+                    }
+                    
+                    if (resultItem.e() && !isEnchantedBook) {
+                        int k2 = inputItem1.j() - inputItem1.h();
+                        int l2 = inputItem2.j() - inputItem2.h();
+                        int i3 = l2 + resultItem.j() * 12 / 100;
+                        int j3 = k2 + i3;
+                        int k3 = resultItem.j() - j3;
+                        
+                        if (k3 < 0) {
+                            k3 = 0;
+                        }
+                        
+                        // getData() --> getMetadata()
+                        if (k3 < resultItem.getData()) {
+                            resultItem.setData(k3);
+                            baseRepairCost += 2;
+                        }
+                    }
+                    
+                    // added for api
+                    Map<Enchantment, EnchantmentChange> changes = new HashMap<>();
+                    // end
+                    
+                    Map<Integer, Integer> addedEnchantments = EnchantmentManager.a(inputItem2);
+                    
+                    for (int addedEnchantmentId : addedEnchantments.keySet()) {
+                        Enchantment enchantment = Enchantment.getById(addedEnchantmentId);
+                        
+                        if (enchantment != null) {
+                            int presentLevel = enchantments.getOrDefault(addedEnchantmentId, 0);
+                            int addedLevel = addedEnchantments.get(addedEnchantmentId);
+                            int newLevel;
+                            
+                            if (presentLevel == addedLevel) {
+                                ++addedLevel;
+                                newLevel = addedLevel;
+                            } else {
+                                newLevel = Math.max(addedLevel, presentLevel);
+                            }
+                            
+                            addedLevel = newLevel;
+                            boolean canEnchant = enchantment.canEnchant(inputItem1);
+                            
+                            // isCreativeMode
+                            if (this.thePlayer.abilities.canInstantlyBuild || inputItem1.getItem() == Items.ENCHANTED_BOOK) {
+                                canEnchant = true;
+                            }
+                            
+                            for (int presentEnchantmentId : enchantments.keySet()) {
+                                // a(Enchantment) --> canApplyTogether
+                                if (presentEnchantmentId != addedEnchantmentId && !enchantment.a(Enchantment.getById(presentEnchantmentId))) {
+                                    canEnchant = false;
+                                    ++baseRepairCost;
+                                }
+                            }
+                            
+                            if (canEnchant) {
+                                if (addedLevel > enchantment.getMaxLevel()) {
+                                    addedLevel = enchantment.getMaxLevel();
+                                }
+                                
+                                enchantments.put(addedEnchantmentId, addedLevel);
+                                int levelCostMultiplier = 0;
+                                
+                                switch (enchantment.getRandomWeight()) {
+                                    case 1:
+                                        levelCostMultiplier = 8;
+                                        break;
+                                    
+                                    case 2:
+                                        levelCostMultiplier = 4;
+                                    
+                                    case 3:
+                                    case 4:
+                                    case 6:
+                                    case 7:
+                                    case 8:
+                                    case 9:
+                                    default:
+                                        break;
+                                    
+                                    case 5:
+                                        levelCostMultiplier = 2;
+                                        break;
+                                    
+                                    case 10:
+                                        levelCostMultiplier = 1;
+                                }
+                                
+                                if (isEnchantedBook) {
+                                    levelCostMultiplier = Math.max(1, levelCostMultiplier / 2);
+                                }
+                                
+                                baseRepairCost += levelCostMultiplier * addedLevel;
+                                
+                                org.bukkit.enchantments.Enchantment bukkitEnchantment = org.bukkit.enchantments.Enchantment.getById()
+                            }
+                        }
+                    }
+                    
+                    // added for api
+                    if (anvilEnchantmentListener != null) {
+                        baseRepairCost = anvilEnchantmentListener.onEnchantmentsComputed(
+                                CraftItemStack.asCraftMirror(inputItem1),
+                                CraftItemStack.asCraftMirror(inputItem2),
+                                CraftItemStack.asCraftMirror(resultItem),
+                                baseRepairCost
                         );
                     }
                 }
@@ -313,7 +620,7 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
             
             setCost(repairCostFromItemWear + baseRepairCost);
             
-            if (baseRepairCost <= 0) {
+            if (baseRepairCost <= 0 || resultItem.getItem() == null) {
                 resultItem = null;
             }
             
@@ -338,14 +645,23 @@ final class CustomAnvilContainer extends ContainerAnvil implements IAnvilInvento
                 EnchantmentManager.a(enchantments, resultItem);
             }
             
-            setItem(0, resultItem);
-            // b() --> detectAndSendChanges()
-            this.b();
-    
+            outputInventory.setItem(0, resultItem);
+            
             // added for api
             for (SimpleListener<IAnvilInventoryHandle> updateListener : updateListeners) {
                 updateListener.accept(this);
             }
+    
+            // b() --> detectAndSendChanges()
+            this.b();
+            
+            // added this because the client is extrapolating the result, and the server never sends it normally
+            if (thePlayer instanceof EntityPlayer) {
+                EntityPlayer p = (EntityPlayer) thePlayer;
+                p.updateInventory(p.activeContainer);
+                p.setContainerData(this, 0, getCost());
+            }
         }
     }
+     */
 }
