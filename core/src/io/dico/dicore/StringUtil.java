@@ -298,10 +298,58 @@ public class StringUtil {
         return target;
     }
     
-    public static String replaceParameter(String target, String param, Object replacementObj) {
+    public static String replParam(String target, String param, Object repl) {
+        return replParam(target, param, repl, false);
+    }
+    
+    public static String replParams(String target, String[] params, Object[] repls) {
+        return replParams(target, params, repls, false, false);
+    }
+    
+    public static boolean replParams(String[] target, String[] params, Object[] repls) {
+        return replParams(target, 0, target.length, params, repls);
+    }
+    
+    public static boolean replParams(String[] target, int from, int to, String[] params, Object[] repls) {
+        return replParams(target, from, to, params, repls, false);
+    }
+    
+    public static boolean replParams(List<String> target, String[] params, Object[] repls) {
+        return replParams(target, 0, target.size(), params, repls);
+    }
+    
+    public static boolean replParams(List<String> target, int from, int to, String[] params, Object[] repls) {
+        return replParams(target, from, to, params, repls, false);
+    }
+    
+    public static String replParamAndTranslate(String target, String param, Object repl) {
+        return replParam(target, param, repl, true);
+    }
+    
+    public static String replParamsAndTranslate(String target, String[] params, Object[] repls) {
+        return replParams(target, params, repls, false, true);
+    }
+    
+    public static boolean replParamsAndTranslate(String[] target, String[] params, Object[] repls) {
+        return replParamsAndTranslate(target, 0, target.length, params, repls);
+    }
+    
+    public static boolean replParamsAndTranslate(String[] target, int from, int to, String[] params, Object[] repls) {
+        return replParams(target, from, to, params, repls, true);
+    }
+    
+    public static boolean replParamsAndTranslate(List<String> target, String[] params, Object[] repls) {
+        return replParamsAndTranslate(target, 0, target.size(), params, repls);
+    }
+    
+    public static boolean replParamsAndTranslate(List<String> target, int from, int to, String[] params, Object[] repls) {
+        return replParams(target, from, to, params, repls, true);
+    }
+    
+    private static String replParam(String target, String param, Object replacementObj, boolean translate) {
         int idx = target.indexOf(param, 0);
         if (idx == -1) {
-            return target;
+            return translate ? Formatting.translate(target) : target;
         }
         
         String rep = replacementObj.toString();
@@ -311,15 +359,15 @@ public class StringUtil {
             idx = builder.indexOf(param, idx + rep.length());
         } while (idx != -1);
         
+        if (translate) {
+            Formatting.translate(builder);
+        }
+        
         return builder.toString();
     }
     
-    public static String replaceParameters(String target, String[] params, Object[] repls) {
-        return replaceParameters(target, params, repls, false);
-    }
-    
     @SuppressWarnings("StringEquality")
-    public static boolean replaceParameters(String[] target, int from, int to, String[] params, Object[] repls) {
+    private static boolean replParams(String[] target, int from, int to, String[] params, Object[] repls, boolean translate) {
         if (from <= 0 || to < from || to >= target.length) {
             throw new IllegalArgumentException("Invalid from-to for array size " + target.length + ": " + from + "-" + to);
         }
@@ -327,7 +375,7 @@ public class StringUtil {
         boolean change = false;
         for (int i = from; i < to; i++) {
             String val = target[i];
-            if (val != (val = replaceParameters(val, params, repls, true))) {
+            if (val != (val = replParams(val, params, repls, true, translate))) {
                 target[i] = val;
                 change = true;
             }
@@ -335,21 +383,17 @@ public class StringUtil {
         return change;
     }
     
-    public static boolean replaceParameters(List<String> target, String[] params, Object[] repls) {
-        return replaceParameters(target, 0, target.size(), params, repls);
-    }
-    
     @SuppressWarnings("StringEquality")
-    public static boolean replaceParameters(List<String> target, int from, int to, String[] params, Object[] repls) {
+    private static boolean replParams(List<String> target, int from, int to, String[] params, Object[] repls, boolean translate) {
         if (from <= 0 || to < from || to >= target.size()) {
             throw new IllegalArgumentException("Invalid from-to for list size " + target.size() + ": " + from + "-" + to);
         }
-        
+    
         boolean change = false;
         if (target instanceof RandomAccess) {
             for (int i = from; i < to; i++) {
                 String val = target.get(i);
-                if (val != (val = replaceParameters(val, params, repls, true))) {
+                if (val != (val = replParams(val, params, repls, true, translate))) {
                     target.set(i, val);
                     change = true;
                 }
@@ -358,7 +402,7 @@ public class StringUtil {
             ListIterator<String> itr = target.listIterator(from);
             for (int n = to - from, i = 0; i < n && itr.hasNext(); i++) {
                 String val = itr.next();
-                if (val != (val = replaceParameters(val, params, repls, true))) {
+                if (val != (val = replParams(val, params, repls, true, translate))) {
                     itr.set(val);
                     change = true;
                 }
@@ -367,7 +411,7 @@ public class StringUtil {
         return change;
     }
     
-    private static String replaceParameters(String target, String[] params, Object[] repls, boolean updateRepls) {
+    private static String replParams(String target, String[] params, Object[] repls, boolean updateRepls, boolean translate) {
         int n = params.length;
         if (n != repls.length) {
             throw new IllegalArgumentException();
@@ -388,7 +432,7 @@ public class StringUtil {
         }
         
         if (idx == -1) {
-            return target;
+            return translate ? Formatting.translate(target) : target;
         }
         
         String repl = repls[i].toString();
@@ -417,6 +461,10 @@ public class StringUtil {
                 builder.replace(idx, idx + param.length(), repl);
                 idx = builder.indexOf(param, idx + repl.length());
             } while (idx != -1);
+        }
+        
+        if (translate) {
+            Formatting.translate(builder);
         }
         
         return builder.toString();

@@ -196,6 +196,40 @@ public final class Formatting implements CharSequence {
         return result == null ? input : String.valueOf(result);
     }
     
+    public static void translate(StringBuilder input) {
+        translateChars('&', input);
+    }
+    
+    public static void translateChars(char alternateChar, StringBuilder input) {
+        translateFormat(alternateChar, FORMAT_CHAR, input);
+    }
+    
+    public static void revert(StringBuilder input) {
+        revertChars('&', input);
+    }
+    
+    public static void revertChars(char alternateChar, StringBuilder input) {
+        translateFormat(FORMAT_CHAR, alternateChar, input);
+    }
+    
+    public static void translateFormat(char fromChar, char toChar, StringBuilder input) {
+        if (input == null) {
+            return;
+        }
+        int n = input.length();
+        if (n < 2) {
+            return;
+        }
+        char previous = input.charAt(0);
+        for (int i = 1; i < n; i++) {
+            char c = input.charAt(i);
+            if (previous == fromChar && isRecognizedChar(c)) {
+                input.setCharAt(i -1, toChar);
+            }
+            previous = c;
+        }
+    }
+    
     private static boolean isRecognizedChar(char c) {
         return isColourChar(c) || isFormatChar(c) || isResetChar(c);
     }
