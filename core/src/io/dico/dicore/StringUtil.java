@@ -378,6 +378,9 @@ public class StringUtil {
         int i;
         for (i = 0; i < n; i++) {
             param = params[i];
+            if (param == null) {
+                continue;
+            }
             idx = target.indexOf(param, 0);
             if (idx != -1) {
                 break;
@@ -401,8 +404,7 @@ public class StringUtil {
         
         for (i++; i < n; i++) {
             param = params[i];
-            idx = builder.indexOf(param, 0);
-            if (idx == -1) {
+            if (param == null || (idx = builder.indexOf(param, 0)) == -1) {
                 continue;
             }
             
