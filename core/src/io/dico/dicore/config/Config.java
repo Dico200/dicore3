@@ -11,11 +11,13 @@ import org.yaml.snakeyaml.DumperOptions.ScalarStyle;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 public class Config {
     private final Logging logger;
     private final File file;
     private final Collection<ConfigEntry> configEntries = new ArrayList<>();
+    private final Collection<Runnable> configListeners = new ArrayList<>();
     
     public Config(Logging logger, File file) {
         this.logger = logger;
@@ -25,6 +27,10 @@ public class Config {
     public <T extends ConfigEntry> T add(T entry) {
         configEntries.add(entry);
         return entry;
+    }
+    
+    public void addLoadListener(Runnable listener) {
+        configListeners.add(Objects.requireNonNull(listener));
     }
     
     public void loadFromStream(InputStream stream) throws IOException, InvalidConfigurationException {
@@ -45,6 +51,10 @@ public class Config {
                 logger.error("Failed to load config at location " + configEntry.getLocation() + ":");
                 ex.printStackTrace();
             }
+        }
+    
+        for (Runnable listener : configListeners) {
+            listener.run();
         }
     }
     

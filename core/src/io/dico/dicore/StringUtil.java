@@ -1,9 +1,6 @@
 package io.dico.dicore;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -51,7 +48,7 @@ public class StringUtil {
         if (newSpaceChar == '\0') {
             return capitalize(input, spaceChar);
         }
-    
+        
         char[] result = null;
         boolean capitalize = true;
         for (int n = input.length(), i = 0; i < n; i++) {
@@ -299,6 +296,128 @@ public class StringUtil {
             target = start + with + coloursBefore + after;
         }
         return target;
+    }
+    
+    public static String replaceParameter(String target, String param, Object replacementObj) {
+        int idx = target.indexOf(param, 0);
+        if (idx == -1) {
+            return target;
+        }
+        
+        String rep = replacementObj.toString();
+        StringBuilder builder = new StringBuilder(target);
+        do {
+            builder.replace(idx, idx + param.length(), rep);
+            idx = builder.indexOf(param, idx + rep.length());
+        } while (idx != -1);
+        
+        return builder.toString();
+    }
+    
+    public static String replaceParameters(String target, String[] params, Object[] repls) {
+        return replaceParameters(target, params, repls, false);
+    }
+    
+    @SuppressWarnings("StringEquality")
+    public static boolean replaceParameters(String[] target, int from, int to, String[] params, Object[] repls) {
+        if (from <= 0 || to < from || to >= target.length) {
+            throw new IllegalArgumentException("Invalid from-to for array size " + target.length + ": " + from + "-" + to);
+        }
+        
+        boolean change = false;
+        for (int i = from; i < to; i++) {
+            String val = target[i];
+            if (val != (val = replaceParameters(val, params, repls, true))) {
+                target[i] = val;
+                change = true;
+            }
+        }
+        return change;
+    }
+    
+    public static boolean replaceParameters(List<String> target, String[] params, Object[] repls) {
+        return replaceParameters(target, 0, target.size(), params, repls);
+    }
+    
+    @SuppressWarnings("StringEquality")
+    public static boolean replaceParameters(List<String> target, int from, int to, String[] params, Object[] repls) {
+        if (from <= 0 || to < from || to >= target.size()) {
+            throw new IllegalArgumentException("Invalid from-to for list size " + target.size() + ": " + from + "-" + to);
+        }
+        
+        boolean change = false;
+        if (target instanceof RandomAccess) {
+            for (int i = from; i < to; i++) {
+                String val = target.get(i);
+                if (val != (val = replaceParameters(val, params, repls, true))) {
+                    target.set(i, val);
+                    change = true;
+                }
+            }
+        } else {
+            ListIterator<String> itr = target.listIterator(from);
+            for (int n = to - from, i = 0; i < n && itr.hasNext(); i++) {
+                String val = itr.next();
+                if (val != (val = replaceParameters(val, params, repls, true))) {
+                    itr.set(val);
+                    change = true;
+                }
+            }
+        }
+        return change;
+    }
+    
+    private static String replaceParameters(String target, String[] params, Object[] repls, boolean updateRepls) {
+        int n = params.length;
+        if (n != repls.length) {
+            throw new IllegalArgumentException();
+        }
+        
+        String param = null;
+        int idx = -1;
+        int i;
+        for (i = 0; i < n; i++) {
+            param = params[i];
+            idx = target.indexOf(param, 0);
+            if (idx != -1) {
+                break;
+            }
+        }
+        
+        if (idx == -1) {
+            return target;
+        }
+        
+        String repl = repls[i].toString();
+        if (updateRepls) {
+            repls[i] = repl;
+        }
+        
+        StringBuilder builder = new StringBuilder(target);
+        do {
+            builder.replace(idx, idx + param.length(), repl);
+            idx = builder.indexOf(param, idx + repl.length());
+        } while (idx != -1);
+        
+        for (i++; i < n; i++) {
+            param = params[i];
+            idx = builder.indexOf(param, 0);
+            if (idx == -1) {
+                continue;
+            }
+            
+            repl = repls[i].toString();
+            if (updateRepls) {
+                repls[i] = repl;
+            }
+            
+            do {
+                builder.replace(idx, idx + param.length(), repl);
+                idx = builder.indexOf(param, idx + repl.length());
+            } while (idx != -1);
+        }
+        
+        return builder.toString();
     }
     
 }

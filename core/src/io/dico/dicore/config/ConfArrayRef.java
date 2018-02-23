@@ -29,6 +29,10 @@ public class ConfArrayRef<T> extends ConfRef<Object> implements Iterable<T> {
         this(location, ConfigSerializers.forArray(serializer, size, forceSize), defaultValue);
     }
     
+    public ConfArrayRef(String location, IConfigSerializer<T> serializer, Object defaultValue) {
+        this(location, serializer, seri)
+    }
+    
     @Override
     public void setDefaultValue(Object defaultValue) {
         if (defaultValue.getClass() != getArraySerializer().getArrayClass()) {
