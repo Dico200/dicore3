@@ -61,7 +61,6 @@ public interface IAnvilEnchantmentListener {
             }
         }
         
-        
     }
 
 }
