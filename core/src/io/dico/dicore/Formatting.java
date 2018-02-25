@@ -284,4 +284,8 @@ public final class Formatting implements CharSequence {
         return format;
     }
     
+    public String toString(char formatChar) {
+        return format.replace(FORMAT_CHAR, formatChar);
+    }
+    
 }

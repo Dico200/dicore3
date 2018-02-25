@@ -1,11 +1,13 @@
 package io.dico.dicore.command.parameter.type;
 
-import io.dico.dicore.command.parameter.ArgumentBuffer;
 import io.dico.dicore.command.CommandException;
 import io.dico.dicore.command.Validate;
+import io.dico.dicore.command.parameter.ArgumentBuffer;
 import io.dico.dicore.command.parameter.IParameter;
+import io.dico.dicore.inventory.ItemProperties;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -29,6 +31,10 @@ public class ParameterTypes {
         return obj;
     }
     
+    static void clinit() {
+        
+    }
+    
     public static final ParameterType<String, Void> STRING;
     public static final ParameterType<Boolean, Void> BOOLEAN;
     public static final NumberParameterType<Double> DOUBLE;
@@ -38,6 +44,7 @@ public class ParameterTypes {
     public static final NumberParameterType<Float> FLOAT;
     public static final ParameterType<Player, Void> PLAYER;
     public static final ParameterType<OfflinePlayer, Void> OFFLINE_PLAYER;
+    public static final ParameterType<ItemProperties, Void> ITEM_TYPE;
     //public static final ParameterType<Boolean, Void> PRESENCE;
     //public static final NumberParameterType<BigDecimal> BIG_DECIMAL;
     //public static final NumberParameterType<BigInteger> BIG_INTEGER;
@@ -231,6 +238,91 @@ public class ParameterTypes {
                     }
                 }
                 return result;
+            }
+        });
+    
+        ITEM_TYPE = registerType(true, new ParameterType<ItemProperties, Void>(ItemProperties.class) {
+            @Override
+            public ItemProperties parse(IParameter<ItemProperties> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException {
+                String input = buffer.requireNext(parameter.getName()).toUpperCase();
+                String[] split = input.split(":");
+                if (input.isEmpty() || split.length == 0 || split.length > 2) {
+                    throw CommandException.invalidArgument(parameter.getName(), "matching type[:data]");
+                }
+                Material material = null;
+                String typeStr = split[0];
+            
+                try {
+                    material = Material.getMaterial(Integer.parseInt(typeStr));
+                } catch (NumberFormatException var9) {
+                    material = Material.matchMaterial(typeStr);
+                }
+            
+                if (material == null) {
+                    throw CommandException.invalidArgument(parameter.getName(), "using a known material");
+                }
+                int data;
+                if (split.length == 2) {
+                    try {
+                        data = Integer.parseInt(split[1]);
+                    } catch (NumberFormatException var8) {
+                        throw CommandException.invalidArgument(parameter.getName(), "matching type[:data] where data is an integer");
+                    }
+                } else {
+                    data = 0;
+                }
+            
+                if (data < 0 || data >= 16) {
+                    throw CommandException.invalidArgument(parameter.getName(), "matching type[:data] where data is an integer under 16");
+                }
+                return new ItemProperties().setType(material).setData((byte) data);
+            }
+        
+            @SuppressWarnings("ResultOfMethodCallIgnored")
+            @Override
+            public List<String> complete(IParameter<ItemProperties> parameter, CommandSender sender, Location location, ArgumentBuffer buffer) {
+                String input = buffer.nextOrEmpty();
+                List<String> result = new ArrayList<>();
+                if (input == null) {
+                    return result;
+                } else {
+                    String[] split = input.split(":");
+                    if (split.length < 1) {
+                        return result;
+                    } else {
+                        String data;
+                        String typeStr;
+                        if (split.length > 1) {
+                            typeStr = split[1];
+                        
+                            try {
+                                Integer.parseInt(typeStr);
+                                data = ":" + typeStr;
+                            } catch (NumberFormatException var12) {
+                                return result;
+                            }
+                        } else {
+                            data = "";
+                        }
+                    
+                        typeStr = split[0].toUpperCase();
+                    
+                        try {
+                            Integer.parseInt(typeStr);
+                            return result;
+                        } catch (NumberFormatException var13) {
+                            Material[] materials = Material.values();
+                            for (Material mat : materials) {
+                                String matName = mat.toString();
+                                if (matName.startsWith(typeStr) || matName.replace("_", "").startsWith(typeStr)) {
+                                    result.add(mat.toString().toLowerCase() + data);
+                                }
+                            }
+                        
+                            return result;
+                        }
+                    }
+                }
             }
         });
         

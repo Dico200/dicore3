@@ -2,7 +2,7 @@ package io.dico.dicore.config.serializers;
 
 import io.dico.dicore.config.ConfigLogging;
 
-abstract class BaseConfigSerializer<T> implements IConfigSerializer<T> {
+public abstract class BaseConfigSerializer<T> implements IConfigSerializer<T> {
     private SerializerResult<T> defaultValueResult;
     
     public SerializerResult<T> defaultValueResult() {
@@ -17,7 +17,7 @@ abstract class BaseConfigSerializer<T> implements IConfigSerializer<T> {
         return defaultValueResult;
     }
     
-    static <T> BaseConfigSerializer<T> wrap(IConfigSerializer<T> serializer) {
+    public static <T> BaseConfigSerializer<T> wrap(IConfigSerializer<T> serializer) {
         if (serializer instanceof BaseConfigSerializer) {
             return (BaseConfigSerializer<T>) serializer;
         }

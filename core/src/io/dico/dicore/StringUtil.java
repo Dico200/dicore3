@@ -368,7 +368,7 @@ public class StringUtil {
     
     @SuppressWarnings("StringEquality")
     private static boolean replParams(String[] target, int from, int to, String[] params, Object[] repls, boolean translate) {
-        if (from <= 0 || to < from || to >= target.length) {
+        if (from < 0 || to < from || to > target.length) {
             throw new IllegalArgumentException("Invalid from-to for array size " + target.length + ": " + from + "-" + to);
         }
         
@@ -385,7 +385,7 @@ public class StringUtil {
     
     @SuppressWarnings("StringEquality")
     private static boolean replParams(List<String> target, int from, int to, String[] params, Object[] repls, boolean translate) {
-        if (from <= 0 || to < from || to >= target.size()) {
+        if (from < 0 || to < from || to > target.size()) {
             throw new IllegalArgumentException("Invalid from-to for list size " + target.size() + ": " + from + "-" + to);
         }
     

@@ -32,32 +32,8 @@ public abstract class MappedSerializer<TIn, TOut> extends DelegatedConfigSeriali
     
     protected abstract TIn preSave(TOut out);
     
-    static <TIn, TOut> MappedSerializer<TIn, TOut> map(BaseConfigSerializer<TIn> from, IConfigSerializerMapper<TIn, TOut> mapper) {
-        return new WithLambda<>(from, mapper);
-    }
-    
-    private static final class WithLambda<TIn, TOut> extends MappedSerializer<TIn, TOut> {
-        private final IConfigSerializerMapper<TIn, TOut> mapper;
-        
-        public WithLambda(BaseConfigSerializer<TIn> delegate, IConfigSerializerMapper<TIn, TOut> mapper) {
-            super(delegate);
-            this.mapper = mapper;
-        }
-    
-        @Override
-        protected SerializerResult<TOut> postLoad(SerializerResult<TIn> in) {
-            return mapper.postLoad(in);
-        }
-    
-        @Override
-        protected TIn preSave(TOut out) {
-            return mapper.preSave(out);
-        }
-    
-        @Override
-        public Class<TOut> type() {
-            return mapper.type();
-        }
+    public static <TIn, TOut> MappedSerializer<TIn, TOut> map(BaseConfigSerializer<TIn> from, IConfigSerializerMapper<TIn, TOut> mapper) {
+        return new MapperMappedSerializer<>(from, mapper);
     }
     
 }

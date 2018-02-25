@@ -1,9 +1,12 @@
 package io.dico.dicore.command;
 
+import io.dico.dicore.command.parameter.type.IParameterTypeSelector;
+import io.dico.dicore.command.parameter.type.MapBasedParameterTypeSelector;
+import io.dico.dicore.command.parameter.type.ParameterType;
 import io.dico.dicore.command.predef.HelpCommand;
+import io.dico.dicore.command.predef.PredefinedCommand;
 import io.dico.dicore.command.predef.SyntaxCommand;
 import io.dico.dicore.command.registration.reflect.ReflectiveRegistration;
-import io.dico.dicore.command.predef.PredefinedCommand;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -14,6 +17,7 @@ import java.util.function.Consumer;
 public final class CommandBuilder {
     private final RootCommandAddress root;
     private ModifiableCommandAddress cur;
+    private IParameterTypeSelector selector = new MapBasedParameterTypeSelector(true);
     
     /**
      * Instantiate a new CommandBuilder with a new command root system
@@ -108,7 +112,7 @@ public final class CommandBuilder {
      */
     public CommandBuilder registerCommands(Class<?> clazz, Object instance) {
         try {
-            ReflectiveRegistration.parseCommandGroup(cur, clazz, instance);
+            ReflectiveRegistration.parseCommandGroup(cur, selector, clazz, instance);
             return this;
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex);
@@ -275,6 +279,33 @@ public final class CommandBuilder {
     }
     
     /**
+     * Add the parameter type to this builder's selector.
+     *
+     * @param type the type
+     * @param <T> the return type of the parameter type
+     * @return this
+     */
+    public <T> CommandBuilder addParameterType(ParameterType<T, Void> type) {
+        selector.addType(false, type);
+        return this;
+    }
+    
+    /**
+     * Add the parameter type to this builder's selector.
+     *
+     * @param infolessAlias whether to also register the type with an infoless alias.
+     *                      this increases the priority assigned to the type if no info object is present.
+     * @param type the type
+     * @param <T> the return type of the parameter type
+     * @param <C> the parameter config type (info object)
+     * @return this
+     */
+    public <T, C> CommandBuilder addParameterType(boolean infolessAlias, ParameterType<T, C> type) {
+        selector.addType(infolessAlias, type);
+        return this;
+    }
+    
+    /**
      * Get the dispatcher for the root address.
      * The dispatcher should be used to finally register all commands,
      * after they are all declared.
@@ -284,5 +315,7 @@ public final class CommandBuilder {
     public ICommandDispatcher getDispatcher() {
         return root;
     }
+    
+    
     
 }

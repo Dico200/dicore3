@@ -2,7 +2,7 @@ package io.dico.dicore.config.serializers;
 
 import io.dico.dicore.config.ConfigLogging;
 
-abstract class NumberSerializer<T extends Number> extends SimpleConfigSerializer<T> {
+public abstract class NumberSerializer<T extends Number> extends SimpleConfigSerializer<T> {
     
     public NumberSerializer(Class<T> type, T defaultValue) {
         super(type, defaultValue);

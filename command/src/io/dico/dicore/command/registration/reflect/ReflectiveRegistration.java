@@ -6,7 +6,6 @@ import io.dico.dicore.command.parameter.IArgumentPreProcessor;
 import io.dico.dicore.command.parameter.IParameter;
 import io.dico.dicore.command.parameter.ParameterList;
 import io.dico.dicore.command.parameter.type.IParameterTypeSelector;
-import io.dico.dicore.command.parameter.type.MapBasedParameterTypeSelector;
 import io.dico.dicore.command.parameter.type.ParameterType;
 import io.dico.dicore.command.parameter.type.ParameterTypes;
 import io.dico.dicore.command.predef.PredefinedCommand;
@@ -81,31 +80,30 @@ public class ReflectiveRegistration {
         return out;
     }
     
-    public static void parseCommandGroup(ICommandAddress address, Class<?> clazz, Object instance) throws CommandParseException {
+    public static void parseCommandGroup(ICommandAddress address, IParameterTypeSelector selector, Class<?> clazz, Object instance) throws CommandParseException {
         boolean requireStatic = instance == null;
         if (!requireStatic && !clazz.isInstance(instance)) {
             throw new CommandParseException();
         }
-        
+    
         List<Method> methods = new LinkedList<>(Arrays.asList(clazz.getDeclaredMethods()));
-        IParameterTypeSelector selector = null;
-        
+    
         Iterator<Method> it = methods.iterator();
         for (Method method; it.hasNext();) {
             method = it.next();
-            
+        
             if (requireStatic && !Modifier.isStatic(method.getModifiers())) {
                 it.remove();
                 continue;
             }
-            
+        
             if (method.isAnnotationPresent(CmdParamType.class)) {
                 it.remove();
-                
+            
                 if (method.getReturnType() != ParameterType.class || method.getParameterCount() != 0) {
                     throw new CommandParseException("Invalid CmdParamType method: must return ParameterType and take no arguments");
                 }
-                
+            
                 ParameterType<?, ?> type;
                 try {
                     Object inst = Modifier.isStatic(method.getModifiers()) ? null : instance;
@@ -114,19 +112,11 @@ public class ReflectiveRegistration {
                 } catch (Exception ex) {
                     throw new CommandParseException("Error occurred whilst getting ParameterType from CmdParamType method", ex);
                 }
-                
-                if (selector == null) {
-                    selector = new MapBasedParameterTypeSelector(true);
-                }
-                
+            
                 selector.addType(method.getAnnotation(CmdParamType.class).infolessAlias(), type);
             }
         }
-        
-        if (selector == null) {
-            selector = ParameterTypes.getSelector();
-        }
-        
+    
         GroupMatcherCache groupMatcherCache = new GroupMatcherCache(clazz, address);
         for (Method method : methods) {
             if (method.isAnnotationPresent(Cmd.class)) {
@@ -134,7 +124,10 @@ public class ReflectiveRegistration {
                 groupMatcherCache.getGroupFor(method).addChild(parsed);
             }
         }
-        
+    }
+    
+    public static void parseCommandGroup(ICommandAddress address, Class<?> clazz, Object instance) throws CommandParseException {
+        parseCommandGroup(address, ParameterTypes.getSelector(), clazz, instance);
     }
     
     private static final class GroupMatcherCache {

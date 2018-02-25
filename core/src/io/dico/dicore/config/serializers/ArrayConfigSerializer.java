@@ -10,7 +10,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
     protected final boolean forceSize;
     private final Class<TArray> arrayClass;
     
-    ArrayConfigSerializer(IConfigSerializer<TComp> delegate, int size, boolean forceSize) {
+    public ArrayConfigSerializer(IConfigSerializer<TComp> delegate, int size, boolean forceSize) {
         super(delegate);
         this.arraySize = size;
         this.forceSize = forceSize;
@@ -18,7 +18,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         this.arrayClass = (Class<TArray>) newArray(0).getClass();
     }
     
-    ArrayConfigSerializer(IConfigSerializer<TComp> delegate, TArray arrayDefaultSuggest, boolean forceSize) {
+    public ArrayConfigSerializer(IConfigSerializer<TComp> delegate, TArray arrayDefaultSuggest, boolean forceSize) {
         super(delegate);
         this.arraySize = sizeOf(arrayDefaultSuggest);
         this.forceSize = forceSize;
@@ -125,7 +125,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         return arrayClass;
     }
     
-    static final class OfReference<T> extends ArrayConfigSerializer<T, T[]> {
+    public static final class OfReference<T> extends ArrayConfigSerializer<T, T[]> {
         
         OfReference(IConfigSerializer<T> delegate, int size, boolean forceSize) {
             super(delegate, size, forceSize);
@@ -162,7 +162,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         }
     }
     
-    static final class OfInt extends ArrayConfigSerializer<Integer, int[]> {
+    public static final class OfInt extends ArrayConfigSerializer<Integer, int[]> {
     
         OfInt(IConfigSerializer<Integer> delegate, int size, boolean forceSize) {
             super(delegate, size, forceSize);
@@ -198,7 +198,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         }
     }
     
-    static final class OfBoolean extends ArrayConfigSerializer<Boolean, boolean[]> {
+    public static final class OfBoolean extends ArrayConfigSerializer<Boolean, boolean[]> {
     
         OfBoolean(IConfigSerializer<Boolean> delegate, int size, boolean forceSize) {
             super(delegate, size, forceSize);
@@ -235,7 +235,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         
     }
     
-    static final class OfLong extends ArrayConfigSerializer<Long, long[]> {
+    public static final class OfLong extends ArrayConfigSerializer<Long, long[]> {
         
         OfLong(IConfigSerializer<Long> delegate, int size, boolean forceSize) {
             super(delegate, size, forceSize);
@@ -272,7 +272,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         
     }
     
-    static final class OfFloat extends ArrayConfigSerializer<Float, float[]> {
+    public static final class OfFloat extends ArrayConfigSerializer<Float, float[]> {
         
         OfFloat(IConfigSerializer<Float> delegate, int size, boolean forceSize) {
             super(delegate, size, forceSize);
@@ -309,7 +309,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
         
     }
     
-    static final class OfDouble extends ArrayConfigSerializer<Double, double[]> {
+    public static final class OfDouble extends ArrayConfigSerializer<Double, double[]> {
         
         OfDouble(IConfigSerializer<Double> delegate, int size, boolean forceSize) {
             super(delegate, size, forceSize);
@@ -347,7 +347,7 @@ public abstract class ArrayConfigSerializer<TComp, TArray> extends DelegatedConf
     }
     
     @SuppressWarnings("unchecked")
-    private static class ArrayIterator<TComp, TArray> implements Iterator<TComp> {
+    public static final class ArrayIterator<TComp, TArray> implements Iterator<TComp> {
         private ArrayConfigSerializer<TComp, TArray> ser;
         private TArray array;
         private int index;

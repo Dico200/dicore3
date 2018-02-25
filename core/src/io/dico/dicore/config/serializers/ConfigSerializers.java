@@ -115,18 +115,25 @@ public class ConfigSerializers {
         Class<TComp> type = delegate.type();
         ArrayConfigSerializer<?, ?> rv;
         if (type.isPrimitive()) {
-            if (type == Integer.TYPE) {
-                rv = new ArrayConfigSerializer.OfInt((IConfigSerializer<Integer>) delegate, size, forceSize);
-            } else if (type == Long.TYPE) {
-                rv = new ArrayConfigSerializer.OfLong((IConfigSerializer<Long>) delegate, size, forceSize);
-            } else if (type == Float.TYPE) {
-                rv = new ArrayConfigSerializer.OfFloat((IConfigSerializer<Float>) delegate, size, forceSize);
-            } else if (type == Double.TYPE) {
-                rv = new ArrayConfigSerializer.OfDouble((IConfigSerializer<Double>) delegate, size, forceSize);
-            } else if (type == Boolean.TYPE) {
-                rv = new ArrayConfigSerializer.OfBoolean((IConfigSerializer<Boolean>) delegate, size, forceSize);
+            switch (type.getSimpleName()) {
+                case "int":
+                    rv = new ArrayConfigSerializer.OfInt((IConfigSerializer<Integer>) delegate, size, forceSize);
+                    break;
+                case "long":
+                    rv = new ArrayConfigSerializer.OfLong((IConfigSerializer<Long>) delegate, size, forceSize);
+                    break;
+                case "float":
+                    rv = new ArrayConfigSerializer.OfFloat((IConfigSerializer<Float>) delegate, size, forceSize);
+                    break;
+                case "double":
+                    rv = new ArrayConfigSerializer.OfDouble((IConfigSerializer<Double>) delegate, size, forceSize);
+                    break;
+                case "boolean":
+                    rv = new ArrayConfigSerializer.OfBoolean((IConfigSerializer<Boolean>) delegate, size, forceSize);
+                    break;
+                default:
+                    throw new IllegalArgumentException();
             }
-            throw new IllegalArgumentException();
         } else {
             rv = new ArrayConfigSerializer.OfReference<>(delegate, size, forceSize);
         }
@@ -138,18 +145,25 @@ public class ConfigSerializers {
         Class<TComp> type = delegate.type();
         ArrayConfigSerializer<?, ?> rv;
         if (type.isPrimitive()) {
-            if (type == Integer.TYPE) {
-                rv = new ArrayConfigSerializer.OfInt((IConfigSerializer<Integer>) delegate, (int[]) arrayDefaultSuggest, forceSize);
-            } else if (type == Long.TYPE) {
-                rv = new ArrayConfigSerializer.OfLong((IConfigSerializer<Long>) delegate, (long[]) arrayDefaultSuggest, forceSize);
-            } else if (type == Float.TYPE) {
-                rv = new ArrayConfigSerializer.OfFloat((IConfigSerializer<Float>) delegate, (float[]) arrayDefaultSuggest, forceSize);
-            } else if (type == Double.TYPE) {
-                rv = new ArrayConfigSerializer.OfDouble((IConfigSerializer<Double>) delegate, (double[]) arrayDefaultSuggest, forceSize);
-            } else if (type == Boolean.TYPE) {
-                rv = new ArrayConfigSerializer.OfBoolean((IConfigSerializer<Boolean>) delegate, (boolean[]) arrayDefaultSuggest, forceSize);
+            switch (type.getSimpleName()) {
+                case "int":
+                    rv = new ArrayConfigSerializer.OfInt((IConfigSerializer<Integer>) delegate, (int[]) arrayDefaultSuggest, forceSize);
+                    break;
+                case "long":
+                    rv = new ArrayConfigSerializer.OfLong((IConfigSerializer<Long>) delegate, (long[]) arrayDefaultSuggest, forceSize);
+                    break;
+                case "float":
+                    rv = new ArrayConfigSerializer.OfFloat((IConfigSerializer<Float>) delegate, (float[]) arrayDefaultSuggest, forceSize);
+                    break;
+                case "double":
+                    rv = new ArrayConfigSerializer.OfDouble((IConfigSerializer<Double>) delegate, (double[]) arrayDefaultSuggest, forceSize);
+                    break;
+                case "boolean":
+                    rv = new ArrayConfigSerializer.OfBoolean((IConfigSerializer<Boolean>) delegate, (boolean[]) arrayDefaultSuggest, forceSize);
+                    break;
+                default:
+                    throw new IllegalArgumentException();
             }
-            throw new IllegalArgumentException();
         } else {
             rv = new ArrayConfigSerializer.OfReference<>(delegate, (TComp[]) arrayDefaultSuggest, forceSize);
         }
@@ -165,7 +179,7 @@ public class ConfigSerializers {
         public BooleanSerializer(Boolean defaultValue) {
             super(Boolean.TYPE, defaultValue);
         }
-    
+        
         @Override
         public SerializerResult<Boolean> load(Object source, ConfigLogging logger) {
             Boolean rv = null;
@@ -192,12 +206,12 @@ public class ConfigSerializers {
         public IntSerializer(Integer defaultValue) {
             super(Integer.TYPE, defaultValue);
         }
-    
+        
         @Override
         protected Integer parse(String string) {
             return Integer.parseInt(string);
         }
-    
+        
         @Override
         protected Integer select(Number number) {
             return number instanceof Integer ? (Integer) number : number.intValue();
@@ -264,11 +278,11 @@ public class ConfigSerializers {
     
     private static final class StringSerializer extends SimpleConfigSerializer<String> {
         private static final StringSerializer defaultToNull = new StringSerializer(null);
-    
+        
         public StringSerializer(String defaultValue) {
             super(String.class, defaultValue);
         }
-    
+        
         @Override
         public SerializerResult<String> load(Object source, ConfigLogging logger) {
             if (source == null) {
@@ -341,7 +355,7 @@ public class ConfigSerializers {
                         if (inputs.length != 3) {
                             throw new IllegalArgumentException("rgb color must have 3 values");
                         }
-                    
+                        
                         int[] colors = new int[3];
                         for (int i = 0; i < 3; i++) {
                             String arg = inputs[i].trim();
@@ -362,17 +376,17 @@ public class ConfigSerializers {
                                 }
                             }
                         }
-                    
+                        
                         return Color.fromRGB(colors[0], colors[1], colors[2]);
                     }
-                
+                    
                     throw new IllegalArgumentException("color function name " + function + " was not recognized");
                 } else {
                     throw new IllegalArgumentException("color does not match " + funcPattern.pattern());
                 }
             }
         }
-    
+        
         private static String toString(Color color) {
             return "rgb(" + color.getRed() + ", " + color.getGreen() + ", " + color.getBlue() + ")";
         }
@@ -495,7 +509,7 @@ public class ConfigSerializers {
                 type = PotionEffectType.getByName(input[index]);
                 if (defaults.getType() == null) {
                     if (type == null) {
-                        logger.error("type not recognized: " + input[index]  + ", defaulting to speed");
+                        logger.error("type not recognized: " + input[index] + ", defaulting to speed");
                         type = PotionEffectType.SPEED;
                     }
                     index++;
@@ -551,5 +565,5 @@ public class ConfigSerializers {
             return new PotionEffect(type, duration, amplifier, ambient, hasParticles);
         }
     }
-
+    
 }

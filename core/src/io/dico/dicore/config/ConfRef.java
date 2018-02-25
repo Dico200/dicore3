@@ -21,6 +21,7 @@ public class ConfRef<T> implements ConfigEntry {
     public ConfRef(String location, IConfigSerializer<T> serializer) {
         this(location);
         this.serializer = serializer;
+        this.value = serializer.defaultValue();
     }
     
     public ConfRef(String location, IConfigSerializer<T> serializer, T defaultValue) {
