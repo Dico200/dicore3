@@ -5,7 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-public interface FactionsPlayer {
+public interface IFactionsPlayer {
     
     Player getPlayer();
     
@@ -13,7 +13,7 @@ public interface FactionsPlayer {
         return FactionsFactory.getDriver().getFactionsPlayer(otherPlayer).getRelationTo(this);
     }
     
-    Relation getRelationTo(FactionsPlayer otherPlayer);
+    Relation getRelationTo(IFactionsPlayer otherPlayer);
     
     default Relation getRelationToCurrentTerritory() {
         return getRelationToTerritory(getPlayer().getLocation());

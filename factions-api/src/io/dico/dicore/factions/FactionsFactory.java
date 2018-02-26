@@ -4,17 +4,15 @@ import io.dico.dicore.exceptions.ExceptionHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.function.Consumer;
 
 public class FactionsFactory {
-    private static final String factionsVersion;
-    private static final String driverVersion;
-    private static final FactionsDriver driver;
-
-    public static FactionsDriver getDriver() {
+    private static final IFactionsDriver driver;
+    
+    public static IFactionsDriver getDriver() {
         return driver;
     }
     
@@ -22,85 +20,86 @@ public class FactionsFactory {
         return driver != null;
     }
     
-    public static String getDriverVersion() {
-        return driverVersion;
-    }
-    
-    public static String getFactionsVersion() {
-        return factionsVersion;
-    }
-    
-    static {
-        factionsVersion = getFactionsVersion0();
-        driverVersion = getDriverVersion0(factionsVersion);
-        driver = getDriver0(driverVersion);
-    }
-    
-    private static String getFactionsVersion0() {
-        Plugin factions = Bukkit.getServer().getPluginManager().getPlugin("Factions");
-        return factions == null ? "none" : factions.getDescription().getVersion();
-    }
-    
-    private static String getDriverVersion0(String factionsVersion) {
-        if (factionsVersion.startsWith("1.6")) {
-            return "1_6";
-        }
-        
-        return "none";
-    }
-    
-    private static FactionsDriver getDriver0(String driverVersion) {
-        if ("none".equals(driverVersion)) {
-            return new DefaultFactionsDriver();
-        }
-        
-        String className = "io.dico.dicore.factions." + driverVersion + ".FactionsDriverImpl";
-        
-        try {
-            Class<?> driverClass = Class.forName(className);
-            Constructor<?> constructor = driverClass.getConstructor();
-            constructor.setAccessible(true);
-            return (FactionsDriver) constructor.newInstance();
-        } catch (ReflectiveOperationException | ClassCastException ex) {
-
-            ex.printStackTrace();
-        }
-        
-        return new DefaultFactionsDriver();
-    }
-    
     private static void logError(String description, Throwable error) {
         Consumer<String> target = msg -> Bukkit.getLogger().severe("[Factions API] " + msg);
         ExceptionHandler.log(target, description, error);
     }
     
-    private static final class DefaultFactionsDriver implements FactionsDriver {
+    static {
+        String[] implementations = {"factionsone_1_2_2"};
+        
+        IFactionsDriver localDriver = null;
+        for (String impl : implementations) {
+            localDriver = getDriver0(impl);
+            if (localDriver != null) {
+                break;
+            }
+        }
+        
+        if (localDriver == null) {
+            localDriver = new DefaultFactionsDriver();
+        }
+        driver = localDriver;
+    }
     
+    private static IFactionsDriver getDriver0(String impl) {
+        String className = "io.dico.dicore.factions." + impl + ".FactionsDriverImpl";
+        
+        Class<?> driverClass;
+        try {
+            driverClass = Thread.currentThread().getContextClassLoader().loadClass(className);
+        } catch (ClassNotFoundException e) {
+            try {
+                driverClass = Class.forName(className);
+            } catch (ClassNotFoundException e1) {
+                return null;
+            }
+        }
+        
+        try {
+            Method checkMethod = driverClass.getDeclaredMethod("checkPluginMatch");
+            checkMethod.setAccessible(true);
+            checkMethod.invoke(null);
+        } catch (ReflectiveOperationException ex) {
+            return null;
+        }
+    
+        try {
+            Constructor<?> constructor = driverClass.getConstructor();
+            constructor.setAccessible(true);
+            return (IFactionsDriver) constructor.newInstance();
+        } catch (ReflectiveOperationException | ClassCastException ex) {
+            return null;
+        }
+    }
+    
+    private static final class DefaultFactionsDriver implements IFactionsDriver {
+        
         @Override
-        public FactionsPlayer getFactionsPlayer(Player player) {
-            return new FactionsPlayer() {
+        public IFactionsPlayer getFactionsPlayer(Player player) {
+            return new IFactionsPlayer() {
                 @Override
                 public Player getPlayer() {
                     return player;
                 }
-            
+                
                 @Override
-                public Relation getRelationTo(FactionsPlayer otherPlayer) {
+                public Relation getRelationTo(IFactionsPlayer otherPlayer) {
                     return Relation.NEUTRAL;
                 }
-            
+                
                 @Override
                 public Relation getRelationToTerritory(World world, int chunkX, int chunkZ) {
                     return Relation.NEUTRAL;
                 }
             };
         }
-    
+        
         @Override
         public Relation getRelationBetween(Player player1, Player player2) {
             return Relation.NEUTRAL;
         }
         
     }
-
+    
 }

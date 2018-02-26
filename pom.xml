@@ -16,6 +16,7 @@
         <module>nms-api</module>
         <module>nms-api/nms-v1_8_R3</module>
         <module>factions-api</module>
+        <module>factions-api/factionsone-1.2.2</module>
     </modules>
 
     <build>
