@@ -1,8 +1,5 @@
 package io.dico.dicore;
 
-import io.dico.dicore.event.ChainedListenerHandle;
-import io.dico.dicore.event.ChainedListenerHandles;
-import io.dico.dicore.event.ListenerHandle;
 import org.bukkit.Server;
 import org.bukkit.event.*;
 import org.bukkit.event.player.PlayerEvent;
@@ -14,10 +11,6 @@ import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Consumer;
@@ -233,69 +226,6 @@ public final class Registrator {
     }
 
     /**
-     * Make a new listener handle for the given event type.
-     * The returned listener handle is not managed by this {@link Registrator}, and you must register it yourself.
-     * the event priority is set to {@link EventPriority#HIGHEST}
-     * the ignore cancelled flag is set to {@code true}
-     *
-     * @param eventClass The event type
-     * @param handler    the listener
-     * @param <T>        the event type
-     * @return this
-     */
-    public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, Consumer<? super T> handler) {
-        return makeListenerHandle(eventClass, EventPriority.HIGHEST, handler);
-    }
-
-    /**
-     * Make a new listener handle for the given event type.
-     * The returned listener handle is not managed by this {@link Registrator}, and you must register it yourself.
-     * The ignoreCancelled flag is set to false if {@code priority} is {@link EventPriority#LOW} or {@link EventPriority#LOWEST}
-     * otherwise, it is set to true.
-     *
-     * @param eventClass The event type
-     * @param priority   the event priority
-     * @param handler    the listener
-     * @param <T>        the event type
-     * @return this
-     */
-    public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, EventPriority priority, Consumer<? super T> handler) {
-        boolean ignoreCancelled = Cancellable.class.isAssignableFrom(eventClass) && priority.getSlot() > EventPriority.LOW.getSlot();
-        return makeListenerHandle(eventClass, priority, ignoreCancelled, handler);
-    }
-
-    /**
-     * Make a new listener handle for the given event type.
-     * The returned listener handle is not managed by this {@link Registrator}, and you must register it yourself.
-     * If {@code ignoreCancelled} is true, the event priority is set to {@link EventPriority#HIGHEST}
-     * Otherwise, it is set to {@link EventPriority#LOW}
-     *
-     * @param eventClass      The event type
-     * @param ignoreCancelled the ignoreCancelled flag of the listener
-     * @param handler         The listener
-     * @param <T>             The event type
-     * @return this
-     */
-    public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, boolean ignoreCancelled, Consumer<? super T> handler) {
-        return makeListenerHandle(eventClass, ignoreCancelled ? EventPriority.HIGHEST : EventPriority.LOW, ignoreCancelled, handler);
-    }
-
-    /**
-     * Make a new listener handle for the given event type.
-     * The returned listener handle is not managed by this {@link Registrator}, and you must register it yourself.
-     *
-     * @param eventClass      The event type
-     * @param priority        the event priority
-     * @param ignoreCancelled the ignoreCancelled flag of the listener
-     * @param handler         the listener
-     * @param <T>             the event type
-     * @return this
-     */
-    public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, Consumer<? super T> handler) {
-        return (ListenerHandle) createRegistration(true, priority, ignoreCancelled, eventClass, handler);
-    }
-
-    /**
      * Register a listener for the given event type.
      * the event priority is set to {@link EventPriority#HIGHEST}
      * the ignore cancelled flag is set to {@code true}
@@ -351,7 +281,7 @@ public final class Registrator {
      * @return this
      */
     public <T extends Event> Registrator registerListener(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, Consumer<? super T> handler) {
-        registerListener(createRegistration(false, priority, ignoreCancelled, eventClass, handler));
+        registerListener(createRegistration(priority, ignoreCancelled, eventClass, handler));
         return this;
     }
 
@@ -370,29 +300,7 @@ public final class Registrator {
         return registerListeners(instance.getClass(), instance);
     }
 
-    public ChainedListenerHandle makeChainedListenerHandle(Class<?> clazz, Object instance) {
-        ChainedListenerHandle rv = ChainedListenerHandles.empty();
-        for (ListenerFieldInfo fieldInfo : getListenerFields(clazz, instance)) {
-            rv = rv.withElement(makeListenerHandle(fieldInfo.eventClass, fieldInfo.anno.priority(), fieldInfo.anno.ignoreCancelled(), fieldInfo.lambda));
-        }
-        return rv;
-    }
-
-    public ChainedListenerHandle makeChainedListenerHandle(Class<?> clazz) {
-        return makeChainedListenerHandle(clazz, null);
-    }
-
-    public ChainedListenerHandle makeChainedListenerHandle(Object instance) {
-        return makeChainedListenerHandle(instance.getClass(), instance);
-    }
-
-    public ListenerHandle makePlayerQuitListenerHandle(Consumer<? super PlayerEvent> handler) {
-        ListenerHandle first = makeListenerHandle(PlayerQuitEvent.class, EventPriority.NORMAL, handler);
-        ListenerHandle second = makeListenerHandle(PlayerKickEvent.class, EventPriority.NORMAL, handler);
-        return ChainedListenerHandles.singleton(first).withElement(second);
-    }
-
-    public Registrator registerPlayerQuitListener(Consumer<? super PlayerEvent> handler) {
+    public Registrator registerPlayerLeaveListener(Consumer<? super PlayerEvent> handler) {
         registerListener(PlayerQuitEvent.class, EventPriority.NORMAL, handler);
         return registerListener(PlayerKickEvent.class, EventPriority.NORMAL, handler);
     }
@@ -430,23 +338,7 @@ public final class Registrator {
     // # Public types
     // ############################################
 
-    public interface IEventListener<T extends Event> extends Consumer<T> {
-        @Override
-        void accept(T event);
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.FIELD)
-    public @interface ListenerInfo {
-
-        String[] events() default {};
-
-        EventPriority priority() default EventPriority.HIGHEST;
-
-        boolean ignoreCancelled() default true;
-    }
-
-    public static class Registration extends RegisteredListener {
+    public static final class Registration extends RegisteredListener {
 
         private final EventExecutor executor;
         private final Class<?> eventClass;
@@ -531,12 +423,12 @@ public final class Registrator {
             if (pluginEnableListener != null) {
                 pluginEnableListener = pluginEnableListener.setPlugin(plugin);
             } else {
-                pluginEnableListener = createRegistration(null, false, EventPriority.NORMAL, false, PluginEnableEvent.class, this::onPluginEnable);
+                pluginEnableListener = createRegistration(null, EventPriority.NORMAL, false, PluginEnableEvent.class, this::onPluginEnable);
             }
             if (pluginDisableListener != null) {
                 pluginDisableListener = pluginDisableListener.setPlugin(plugin);
             } else {
-                pluginDisableListener = createRegistration(null, false, EventPriority.NORMAL, false, PluginDisableEvent.class, this::onPluginDisable);
+                pluginDisableListener = createRegistration(null, EventPriority.NORMAL, false, PluginDisableEvent.class, this::onPluginDisable);
             }
         }
     }
@@ -594,8 +486,7 @@ public final class Registrator {
         }
     }
 
-    private <T extends Event> Registration createRegistration(boolean asHandle,
-                                                              EventPriority priority,
+    private <T extends Event> Registration createRegistration(EventPriority priority,
                                                               boolean ignoreCancelled,
                                                               Class<T> eventClass,
                                                               Consumer<? super T> handler) {
@@ -611,19 +502,15 @@ public final class Registrator {
             }
         }
 
-        return createRegistration(caller, asHandle, priority, ignoreCancelled, eventClass, handler);
+        return createRegistration(caller, priority, ignoreCancelled, eventClass, handler);
     }
 
     private <T extends Event> Registration createRegistration(StackTraceElement caller,
-                                                              boolean asHandle,
                                                               EventPriority priority,
                                                               boolean ignoreCancelled,
                                                               Class<T> eventClass,
                                                               Consumer<? super T> handler) {
         EventExecutor executor = newEventExecutor(eventClass, handler);
-        if (asHandle) {
-            return new RegistrationWithHandle(eventClass, caller, executor, priority, plugin, ignoreCancelled);
-        }
         return new Registration(eventClass, caller, executor, priority, plugin, ignoreCancelled);
     }
 
@@ -652,7 +539,7 @@ public final class Registrator {
         fieldLoop:
         for (Field f : fields) {
             if (isStatic != Modifier.isStatic(f.getModifiers())
-                    || !f.isAnnotationPresent(ListenerInfo.class)) {
+                    || !f.isAnnotationPresent(RegistratorListenerTag.class)) {
                 continue;
             }
 
@@ -662,7 +549,7 @@ public final class Registrator {
             }
 
             Type eventType = null;
-            if (f.getType() == IEventListener.class) {
+            if (f.getType() == IRegistratorListener.class) {
 
                 Type[] typeArgs;
                 if (!(f.getGenericType() instanceof ParameterizedType)
@@ -696,7 +583,7 @@ public final class Registrator {
                         continue;
                     }
 
-                    if (itfClass == IEventListener.class) {
+                    if (itfClass == IRegistratorListener.class) {
                         if (arguments == null || arguments.length != 1) {
                             // Log a warning or throw an exception
                             handleListenerFieldError(new ListenerFieldError(f, ""));
@@ -743,7 +630,7 @@ public final class Registrator {
 
             Class<? extends Event> baseEventClass = (Class<? extends Event>) eventType;
 
-            ListenerInfo anno = f.getAnnotation(ListenerInfo.class);
+            RegistratorListenerTag anno = f.getAnnotation(RegistratorListenerTag.class);
             String[] eventClassNames = anno.events();
             if (eventClassNames.length > 0) {
 
@@ -804,22 +691,6 @@ public final class Registrator {
     // # Internal types
     // ############################################
 
-    private static final class RegistrationWithHandle extends Registration implements ListenerHandle {
-        RegistrationWithHandle(Class<?> eventClass, StackTraceElement caller, EventExecutor executor, EventPriority priority, Plugin plugin, boolean ignoreCancelled) {
-            super(eventClass, caller, executor, priority, plugin, ignoreCancelled);
-        }
-
-        @Override
-        public void register() {
-            super.register();
-        }
-
-        @Override
-        public void unregister() {
-            super.unregister();
-        }
-    }
-
     private static final class HandlerListInfo {
         final HandlerList handlerList;
         // true if and only if the handler list resides in a super class of the event for which it was requested.
@@ -836,9 +707,9 @@ public final class Registrator {
     private static final class ListenerFieldInfo {
         final Class<? extends Event> eventClass;
         final Consumer<? super Event> lambda;
-        final ListenerInfo anno;
+        final RegistratorListenerTag anno;
 
-        ListenerFieldInfo(Class<? extends Event> eventClass, Consumer<? super Event> lambda, ListenerInfo anno) {
+        ListenerFieldInfo(Class<? extends Event> eventClass, Consumer<? super Event> lambda, RegistratorListenerTag anno) {
             this.eventClass = eventClass;
             this.lambda = lambda;
             this.anno = anno;
