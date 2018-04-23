@@ -14,22 +14,22 @@ public class RegistratorTest {
 
     private static class ListenerFieldClass {
 
-        private interface EntityDamageByEntityEventListener extends Registrator.IEventListener<EntityDamageByEntityEvent> {
+        private interface EntityDamageByEntityEventListener extends IRegistratorListener<EntityDamageByEntityEvent> {
 
         }
 
-        @Registrator.ListenerInfo
+        @RegistratorListenerTag
         private final EntityDamageByEntityEventListener onEntityDamageByEntity = (event) -> {
 
         };
 
-        @Registrator.ListenerInfo
-        private final Registrator.IEventListener<PlayerJoinEvent> onPlayerJoin = (event) -> {
+        @RegistratorListenerTag
+        private final IRegistratorListener<PlayerJoinEvent> onPlayerJoin = (event) -> {
 
         };
 
-        @Registrator.ListenerInfo(events = {"player.PlayerQuitEvent", "player.PlayerKickEvent", "player.PlayerChangedWorldEvent"})
-        private final Registrator.IEventListener<PlayerEvent> onPlayerQuit = (event) -> {
+        @RegistratorListenerTag(events = {"player.PlayerQuitEvent", "player.PlayerKickEvent", "player.PlayerChangedWorldEvent"})
+        private final IRegistratorListener<PlayerEvent> onPlayerQuit = (event) -> {
 
         };
 
@@ -44,8 +44,8 @@ public class RegistratorTest {
 
     private static class ListenerFieldClassWithError1 {
 
-        @Registrator.ListenerInfo(events = {"player.PlayerQuitEvent", "player.PlayerKickEvent", "player.PlayerChangedWorldEvent"})
-        private final Registrator.IEventListener<EntityEvent> onPlayerQuit = (event) -> {
+        @RegistratorListenerTag(events = {"player.PlayerQuitEvent", "player.PlayerKickEvent", "player.PlayerChangedWorldEvent"})
+        private final IRegistratorListener<EntityEvent> onPlayerQuit = (event) -> {
 
         };
 
@@ -59,7 +59,7 @@ public class RegistratorTest {
 
     private static class ListenerFieldClassWithError2 {
 
-        @Registrator.ListenerInfo
+        @RegistratorListenerTag
         private final Consumer<PlayerQuitEvent> onPlayerQuit = (event) -> {
 
         };

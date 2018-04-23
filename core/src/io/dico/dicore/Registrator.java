@@ -551,7 +551,7 @@ public final class Registrator {
                 continue;
             }
 
-            if (!IEventListener.class.isAssignableFrom(f.getType())) {
+            if (!IRegistratorListener.class.isAssignableFrom(f.getType())) {
                 handleListenerFieldError(new ListenerFieldError(f, "Field type cannot be assigned to IEventListener: " + f.getGenericType().getTypeName()));
                 continue;
             }
