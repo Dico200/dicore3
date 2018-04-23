@@ -660,7 +660,7 @@ public final class Registrator {
                 continue;
             }
 
-            if (!EventListener.class.isAssignableFrom(f.getType())) {
+            if (!IEventListener.class.isAssignableFrom(f.getType())) {
                 handleListenerFieldError(new ListenerFieldError(f, "Field type cannot be assigned to IEventListener: " + f.getGenericType().getTypeName()));
                 continue;
             }
@@ -852,7 +852,7 @@ public final class Registrator {
     /**
      * Error class to report fields that are intended to be listeners with illegal properties
      */
-    private static final class ListenerFieldError extends Error {
+    static final class ListenerFieldError extends Error {
         private Field field;
 
         public ListenerFieldError(Field field, String message) {
