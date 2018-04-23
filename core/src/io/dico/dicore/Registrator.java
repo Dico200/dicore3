@@ -1,19 +1,23 @@
 package io.dico.dicore;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Server;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.*;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
-import org.bukkit.plugin.EventExecutor;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.RegisteredListener;
+import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.plugin.*;
 
+import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 /**
  * This class acts as a utility to register event listeners in a functional manner.
@@ -60,7 +64,7 @@ public final class Registrator {
 
     static {
         handlerListCache = new IdentityHashMap<>();
-        defaultFakePlugin = new RegistratorPlugin();
+        defaultFakePlugin = new RegistratorPlugin("Default");
         instance = new Registrator();
         universalListenerObject = new Listener() {
 
@@ -109,16 +113,16 @@ public final class Registrator {
      * Constructs a new instance using the {@link #defaultFakePlugin universal plugin object}
      */
     public Registrator() {
-        this(false);
+        this(defaultFakePlugin);
     }
 
     /**
-     * Constructs a new instance using an artificial plugin.
+     * Constructs a new instance using a newly instantiated artificial plugin.
      *
-     * @param distinctPlugin true if the artificial plugin should be distinct from the {@link #defaultFakePlugin universal plugin object}
+     * @param name an indicator for the name to use with the artificial plugin.
      */
-    public Registrator(boolean distinctPlugin) {
-        this(distinctPlugin ? new RegistratorPlugin() : defaultFakePlugin);
+    public Registrator(String name) {
+        this(new RegistratorPlugin(name));
     }
 
     /**
@@ -741,25 +745,49 @@ public final class Registrator {
         }
     }
 
-    private static class RegistratorPlugin implements Plugin {
+    /**
+     * A fake plugin to be used by registrations made by {@link Registrator} if no plugin is given explicitly
+     * This allows libraries that don't have a plugin to register with in the first place to listen for events as well.
+     * Instances are not registered with the {@link org.bukkit.plugin.PluginManager}
+     *
+     * Package private: Only intended for use by {@link Registrator}
+     *
+     * This class attempts to provide implementations for methods such that
+     * plugin checks don't fail because of null pointers being returned.
+     */
+    private static final class RegistratorPlugin implements Plugin {
+        private static final String PREFIX = "Registrator_";
+        private final PluginDescriptionFile pdf;
+
+        RegistratorPlugin(String name) {
+            pdf = new PluginDescriptionFile(PREFIX + Objects.requireNonNull(name), "0.1", getClass().getName());
+        }
+
         @Override
-        public java.io.File getDataFolder() {
+        public String getName() {
+            return pdf.getName();
+        }
+
+        @Override
+        public File getDataFolder() {
+            File file = new File("plugins/Registrators/" + getName().substring(PREFIX.length()));
+            file.mkdirs();
+            return file;
+        }
+
+        @Override
+        public PluginDescriptionFile getDescription() {
+            return pdf;
+        }
+
+        @Override
+        public FileConfiguration getConfig() {
             return null;
         }
 
         @Override
-        public org.bukkit.plugin.PluginDescriptionFile getDescription() {
-            return null;
-        }
-
-        @Override
-        public org.bukkit.configuration.file.FileConfiguration getConfig() {
-            return null;
-        }
-
-        @Override
-        public java.io.InputStream getResource(String s) {
-            return null;
+        public InputStream getResource(String s) {
+            return getClass().getResourceAsStream(s);
         }
 
         @Override
@@ -779,13 +807,13 @@ public final class Registrator {
         }
 
         @Override
-        public org.bukkit.plugin.PluginLoader getPluginLoader() {
+        public PluginLoader getPluginLoader() {
             return null;
         }
 
         @Override
         public Server getServer() {
-            return null;
+            return Bukkit.getServer();
         }
 
         @Override
@@ -815,23 +843,13 @@ public final class Registrator {
         }
 
         @Override
-        public com.avaje.ebean.EbeanServer getDatabase() {
+        public ChunkGenerator getDefaultWorldGenerator(String s, String s1) {
             return null;
         }
 
         @Override
-        public org.bukkit.generator.ChunkGenerator getDefaultWorldGenerator(String s, String s1) {
-            return null;
-        }
-
-        @Override
-        public java.util.logging.Logger getLogger() {
-            return null;
-        }
-
-        @Override
-        public String getName() {
-            return null;
+        public Logger getLogger() {
+            return Bukkit.getLogger();
         }
 
         @Override
@@ -844,10 +862,6 @@ public final class Registrator {
             return null;
         }
 
-        @Override
-        public boolean equals(Object obj) {
-            return this == obj;
-        }
     }
 
 }
