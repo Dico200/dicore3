@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * * {@link #registerListeners(Class)}
  * * {@link #registerListeners(Object)}
  * * {@link #registerListeners(Class, Object)}
- * * {@link #registerPlayerQuitListener(Consumer)}
+ * * {@link #registerPlayerLeaveListener(Consumer)}
  * methods.
  * <p>
  * Listeners registered in this way are generally a bit faster than when registered through {@link org.bukkit.plugin.PluginManager#registerEvents(Listener, Plugin)}
