@@ -31,6 +31,10 @@ import java.util.function.Consumer;
  * * {@link #registerListener(Class, EventPriority, Consumer)}
  * * {@link #registerListener(Class, boolean, Consumer)}
  * * {@link #registerListener(Class, EventPriority, boolean, Consumer)}
+ * * {@link #registerListeners(Class)}
+ * * {@link #registerListeners(Object)}
+ * * {@link #registerListeners(Class, Object)}
+ * * {@link #registerPlayerQuitListener(Consumer)}
  * methods.
  * <p>
  * Listeners registered in this way are generally a bit faster than when registered through {@link org.bukkit.plugin.PluginManager#registerEvents(Listener, Plugin)}
