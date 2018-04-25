@@ -1,6 +1,6 @@
 package io.dico.dicore.command.registration;
 
-import com.projectoreville.util.Reflection;
+import io.dico.dicore.Reflection;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.SimpleCommandMap;

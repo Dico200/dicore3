@@ -5,7 +5,7 @@ import io.dico.dicore.command.ExecutionContext;
 import io.dico.dicore.command.annotation.Range;
 import io.dico.dicore.command.parameter.ArgumentBuffer;
 import io.dico.dicore.command.parameter.Parameter;
-import com.projectoreville.util.Reflection;
+import io.dico.dicore.Reflection;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 

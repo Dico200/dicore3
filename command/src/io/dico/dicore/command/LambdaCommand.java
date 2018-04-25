@@ -1,6 +1,6 @@
 package io.dico.dicore.command;
 
-import com.projectoreville.util.exceptions.checkedfunctions.CheckedBiFunction;
+import io.dico.dicore.exceptions.checkedfunctions.CheckedBiFunction;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 
