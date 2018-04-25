@@ -102,6 +102,7 @@ public class MapBasedParameterTypeSelector implements IParameterTypeSelector {
     }
     
     static {
+        // registers default parameter types
         ParameterTypes.clinit();
     }
     

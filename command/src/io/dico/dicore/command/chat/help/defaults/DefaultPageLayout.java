@@ -1,10 +1,10 @@
 package io.dico.dicore.command.chat.help.defaults;
 
-import io.dico.dicore.Formatting;
 import io.dico.dicore.command.EMessageType;
 import io.dico.dicore.command.ExecutionContext;
 import io.dico.dicore.command.ICommandAddress;
 import io.dico.dicore.command.ModifiableCommandAddress;
+import io.dico.dicore.command.chat.Formatting;
 import io.dico.dicore.command.chat.IChatController;
 import io.dico.dicore.command.chat.help.IPageBorder;
 import io.dico.dicore.command.chat.help.IPageLayout;

@@ -9,7 +9,10 @@ import java.util.*;
 
 public abstract class ModifiableCommandAddress implements ICommandAddress {
     Map<String, ChildCommandAddress> children;
+    // the chat controller as configured by the programmer
     IChatController chatController;
+    // cache for the algorithm that finds the first chat controller going up the tree
+    transient IChatController chatControllerCache;
     ModifiableCommandAddress helpChild;
     
     public ModifiableCommandAddress() {
@@ -61,11 +64,6 @@ public abstract class ModifiableCommandAddress implements ICommandAddress {
     
     @Override
     public String getMainKey() {
-        return null;
-    }
-    
-    @Override
-    public String getAddress() {
         return null;
     }
     
@@ -151,6 +149,34 @@ public abstract class ModifiableCommandAddress implements ICommandAddress {
             helpChild = mChild;
         }
     }
+
+    public void removeChildren(boolean removeAliases, String... keys) {
+        if (keys.length == 0) {
+            throw new IllegalArgumentException("keys is empty");
+        }
+
+        for (String key : keys) {
+            ChildCommandAddress keyTarget = getChild(key);
+            if (keyTarget == null) {
+                continue;
+            }
+
+            if (removeAliases) {
+                for (Iterator<String> iterator = keyTarget.namesModifiable.iterator(); iterator.hasNext(); ) {
+                    String alias = iterator.next();
+                    ChildCommandAddress aliasTarget = getChild(key);
+                    if (aliasTarget == keyTarget) {
+                        children.remove(alias);
+                        iterator.remove();
+                    }
+                }
+                continue;
+            }
+
+            children.remove(key);
+            keyTarget.namesModifiable.remove(key);
+        }
+    }
     
     public boolean hasHelpCommand() {
         return helpChild != null;
@@ -162,20 +188,71 @@ public abstract class ModifiableCommandAddress implements ICommandAddress {
     
     @Override
     public IChatController getChatController() {
-        ModifiableCommandAddress cur = this;
-        while (cur.chatController == null && cur.hasParent()) {
-            cur = cur.getParent();
+        if (chatControllerCache == null) {
+            if (chatController != null) {
+                chatControllerCache = chatController;
+            } else if (!hasParent()) {
+                chatControllerCache = ChatControllers.defaultChat();
+            } else {
+                chatControllerCache = getParent().getChatController();
+            }
         }
-        return cur.chatController == null ? ChatControllers.defaultChat() : cur.chatController;
+        return chatControllerCache;
     }
     
     public void setChatController(IChatController chatController) {
         this.chatController = chatController;
+        resetChatControllerCache(new HashSet<>());
+    }
+
+    void resetChatControllerCache(Set<ModifiableCommandAddress> dejaVu) {
+        if (dejaVu.add(this)) {
+            chatControllerCache = chatController;
+            for (ChildCommandAddress address : children.values()) {
+                if (address.chatController == null) {
+                    address.resetChatControllerCache(dejaVu);
+                }
+            }
+        }
     }
     
     @Override
     public ICommandDispatcher getDispatcherForTree() {
         return getRoot();
+    }
+
+    void appendDebugInformation(StringBuilder target, String linePrefix, Set<ICommandAddress> seen) {
+        target.append('\n').append(linePrefix);
+        if (!seen.add(this)) {
+            target.append("<duplicate of address '").append(getAddress()).append("'>");
+            return;
+        }
+
+        if (this instanceof ChildCommandAddress) {
+            List<String> namesModifiable = ((ChildCommandAddress) this).namesModifiable;
+            if (namesModifiable.isEmpty()) {
+                target.append("<no key>");
+            } else {
+                Iterator<String> keys = namesModifiable.iterator();
+                target.append(keys.next()).append(' ');
+                if (keys.hasNext()) {
+                    target.append('(').append(keys.next());
+                    while (keys.hasNext()) {
+                        target.append(" ,").append(keys.next());
+                    }
+                    target.append(") ");
+                }
+            }
+        } else {
+            target.append("<root> ");
+        }
+
+        String commandClass = hasCommand() ? getCommand().getClass().getCanonicalName() : "<no command>";
+        target.append(commandClass);
+
+        for (ChildCommandAddress child : new HashSet<>(children.values())) {
+            child.appendDebugInformation(target, linePrefix + "  ", seen);
+        }
     }
     
 }

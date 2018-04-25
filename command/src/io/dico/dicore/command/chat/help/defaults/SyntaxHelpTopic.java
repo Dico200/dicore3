@@ -1,18 +1,20 @@
 package io.dico.dicore.command.chat.help.defaults;
 
-import io.dico.dicore.Formatting;
 import io.dico.dicore.command.Command;
 import io.dico.dicore.command.EMessageType;
 import io.dico.dicore.command.ExecutionContext;
 import io.dico.dicore.command.ICommandAddress;
+import io.dico.dicore.command.chat.Formatting;
 import io.dico.dicore.command.chat.help.IHelpComponent;
 import io.dico.dicore.command.chat.help.IHelpTopic;
 import io.dico.dicore.command.chat.help.SimpleHelpComponent;
-import io.dico.dicore.command.parameter.IParameter;
+import io.dico.dicore.command.parameter.Parameter;
 import io.dico.dicore.command.parameter.ParameterList;
 import org.bukkit.permissions.Permissible;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class SyntaxHelpTopic implements IHelpTopic {
     
@@ -38,13 +40,13 @@ public class SyntaxHelpTopic implements IHelpTopic {
             
             Command command = target.getCommand();
             ParameterList list = command.getParameterList();
-            IParameter repeated = list.getRepeatedParameter();
+            Parameter<?, ?> repeated = list.getRepeatedParameter();
         
             int requiredCount = list.getRequiredCount();
-            List<IParameter> indexedParameters = list.getIndexedParameters();
+            List<Parameter<?, ?>> indexedParameters = list.getIndexedParameters();
             for (int i = 0, n = indexedParameters.size(); i < n; i++) {
                 syntax.append(i < requiredCount ? " <" : " [");
-                IParameter param = indexedParameters.get(i);
+                Parameter<?, ?> param = indexedParameters.get(i);
                 syntax.append(param.getName());
                 if (param == repeated) {
                     syntax.append(highlight).append("...").append(syntaxColor);
@@ -52,8 +54,8 @@ public class SyntaxHelpTopic implements IHelpTopic {
                 syntax.append(i < requiredCount ? '>' : ']');
             }
         
-            Map<String, IParameter> parametersByName = list.getParametersByName();
-            for (IParameter param : parametersByName.values()) {
+            Map<String, Parameter<?, ?>> parametersByName = list.getParametersByName();
+            for (Parameter<?, ?> param : parametersByName.values()) {
                 if (param.isFlag()) {
                     syntax.append(" [").append(param.getName());
                     if (param.expectsInput()) {

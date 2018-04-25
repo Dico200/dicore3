@@ -1,7 +1,7 @@
 package io.dico.dicore.command.registration;
 
-import io.dico.dicore.command.ICommandDispatcher;
 import io.dico.dicore.command.ICommandAddress;
+import io.dico.dicore.command.ICommandDispatcher;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;

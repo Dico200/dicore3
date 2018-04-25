@@ -1,7 +1,7 @@
 package io.dico.dicore.command.annotation;
 
-import io.dico.dicore.command.Validate;
 import io.dico.dicore.command.CommandException;
+import io.dico.dicore.command.Validate;
 import io.dico.dicore.command.parameter.type.ParameterConfig;
 
 import java.lang.annotation.ElementType;

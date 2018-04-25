@@ -6,8 +6,8 @@ import java.util.*;
  * IParameter definition for a command
  */
 public class ParameterList {
-    private List<IParameter> indexedParameters;
-    private Map<String, IParameter> byName;
+    private List<Parameter<?, ?>> indexedParameters;
+    private Map<String, Parameter<?, ?>> byName;
     private IArgumentPreProcessor argumentPreProcessor = IArgumentPreProcessor.NONE;
     private int requiredCount = -1;
     private boolean repeatFinalParameter;
@@ -60,11 +60,11 @@ public class ParameterList {
         return this;
     }
     
-    public List<IParameter> getIndexedParameters() {
+    public List<Parameter<?, ?>> getIndexedParameters() {
         return Collections.unmodifiableList(indexedParameters);
     }
     
-    public IParameter getParameterByName(String name) {
+    public Parameter<?, ?> getParameterByName(String name) {
         return byName.get(name);
     }
     
@@ -72,7 +72,7 @@ public class ParameterList {
         return indexedParameters.get(index).getName();
     }
     
-    public Map<String, IParameter> getParametersByName() {
+    public Map<String, Parameter<?, ?>> getParametersByName() {
         return Collections.unmodifiableMap(byName);
     }
     
@@ -83,7 +83,7 @@ public class ParameterList {
      * @param parameter the parameter
      * @return this
      */
-    public ParameterList addParameter(IParameter parameter) {
+    public ParameterList addParameter(Parameter<?, ?> parameter) {
         return addParameter(-1, parameter);
     }
     
@@ -96,7 +96,7 @@ public class ParameterList {
      * @return this
      * @throws NullPointerException if parameter is null
      */
-    public ParameterList addParameter(int index, IParameter parameter) {
+    public ParameterList addParameter(int index, Parameter<?, ?> parameter) {
         //System.out.println("Added parameter " + parameter.getName() + ", flag: " + parameter.isFlag());
         byName.put(parameter.getName(), parameter);
         if (!parameter.isFlag()) {
@@ -105,13 +105,13 @@ public class ParameterList {
         return this;
     }
     
-    public IParameter getRepeatedParameter() {
+    public Parameter<?, ?> getRepeatedParameter() {
         if (!repeatFinalParameter) {
             return null;
         }
         if (finalParameterMayBeFlag) {
-            Iterator<IParameter> iterator = byName.values().iterator();
-            IParameter result = null;
+            Iterator<Parameter<?, ?>> iterator = byName.values().iterator();
+            Parameter<?, ?> result = null;
             while (iterator.hasNext()) {
                 result = iterator.next();
             }

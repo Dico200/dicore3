@@ -1,10 +1,10 @@
 package io.dico.dicore.command.parameter;
 
+import io.dico.dicore.command.CommandException;
+import io.dico.dicore.command.ExecutionContext;
 import io.dico.dicore.command.Validate;
 import io.dico.dicore.command.annotation.Range;
 import io.dico.dicore.command.parameter.type.ParameterType;
-import io.dico.dicore.command.CommandException;
-import io.dico.dicore.command.ExecutionContext;
 import org.bukkit.Location;
 
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.Objects;
  * @param <TResult>    the parameter's type
  * @param <TParamInfo> the parameter info object. Example: {@link Range.Memory}
  */
-public class Parameter<TResult, TParamInfo> implements IParameter<TResult> {
+public class Parameter<TResult, TParamInfo> {
     private final String name;
     private final String description;
     private final ParameterType<TResult, TParamInfo> parameterType;
@@ -48,7 +48,19 @@ public class Parameter<TResult, TParamInfo> implements IParameter<TResult> {
             throw new IllegalArgumentException("Non-flag parameter's name may not start with -");
         }
     }
-    
+
+    public static <TResult> Parameter<TResult, ?> newParameter(String name, String description, ParameterType<TResult, ?> type) {
+        return new Parameter<>(name, description, type, null);
+    }
+
+    public static <TResult, TParamInfo> Parameter<TResult, TParamInfo> newParameter(String name, String description, ParameterType<TResult, TParamInfo> type, TParamInfo info) {
+        return new Parameter<>(name, description, type, info);
+    }
+
+    public static <TResult, TParamInfo> Parameter<TResult, TParamInfo> newParameter(String name, String description, ParameterType<TResult, TParamInfo> parameterType, TParamInfo paramInfo, boolean flag, String flagPermission) {
+        return new Parameter<>(name, description, parameterType, paramInfo, flag, flagPermission);
+    }
+
     public TResult parse(ExecutionContext context, ArgumentBuffer buffer) throws CommandException {
         if (getFlagPermission() != null) {
             Validate.isAuthorized(context.getSender(), getFlagPermission(), "You do not have permission to use the flag " + name);
@@ -100,7 +112,7 @@ public class Parameter<TResult, TParamInfo> implements IParameter<TResult> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof IParameter)) return false;
+        if (!(o instanceof Parameter)) return false;
         /*
         IParameter<?, ?> parameter = (IParameter<?, ?>) o;
         

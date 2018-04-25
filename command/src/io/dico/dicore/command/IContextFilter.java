@@ -1,7 +1,7 @@
 package io.dico.dicore.command;
 
-import io.dico.dicore.exceptions.checkedfunctions.CheckedConsumer;
-import io.dico.dicore.exceptions.checkedfunctions.CheckedRunnable;
+import com.projectoreville.util.exceptions.checkedfunctions.CheckedConsumer;
+import com.projectoreville.util.exceptions.checkedfunctions.CheckedRunnable;
 import org.bukkit.command.CommandSender;
 
 import java.util.List;

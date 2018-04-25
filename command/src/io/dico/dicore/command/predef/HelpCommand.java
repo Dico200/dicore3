@@ -3,7 +3,6 @@ package io.dico.dicore.command.predef;
 import io.dico.dicore.command.*;
 import io.dico.dicore.command.annotation.Range;
 import io.dico.dicore.command.parameter.ArgumentBuffer;
-import io.dico.dicore.command.parameter.IParameter;
 import io.dico.dicore.command.parameter.Parameter;
 import io.dico.dicore.command.parameter.type.NumberParameterType;
 import org.bukkit.command.CommandSender;
@@ -12,7 +11,7 @@ import org.bukkit.command.CommandSender;
  * The help command
  */
 public class HelpCommand extends PredefinedCommand<HelpCommand> {
-    private static final IParameter<Integer> pageParameter;
+    private static final Parameter<Integer, Range.Memory> pageParameter;
     public static final HelpCommand INSTANCE;
     
     private HelpCommand(boolean modifiable) {
@@ -60,7 +59,7 @@ public class HelpCommand extends PredefinedCommand<HelpCommand> {
                     }
                     
                     @Override
-                    public Integer parseForContext(IParameter<Integer> parameter, ExecutionContext context, ArgumentBuffer buffer) throws CommandException {
+                    public Integer parseForContext(Parameter<Integer, Range.Memory> parameter, ExecutionContext context, ArgumentBuffer buffer) throws CommandException {
                         if (context.getAddress().getCommand() == null || context.getAddress().getCommand().getClass() != HelpCommand.class) {
                             // An address was executed with its help command as target
                             buffer.next();

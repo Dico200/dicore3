@@ -1,9 +1,9 @@
 package io.dico.dicore.command.parameter.type;
 
-import io.dico.dicore.command.parameter.ArgumentBuffer;
 import io.dico.dicore.command.CommandException;
 import io.dico.dicore.command.annotation.Range;
-import io.dico.dicore.command.parameter.IParameter;
+import io.dico.dicore.command.parameter.ArgumentBuffer;
+import io.dico.dicore.command.parameter.Parameter;
 import org.bukkit.command.CommandSender;
 
 /**
@@ -22,7 +22,7 @@ public abstract class NumberParameterType<T extends Number> extends ParameterTyp
     protected abstract T select(Number number);
     
     @Override
-    public T parse(IParameter<T> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException {
+    public T parse(Parameter<T, Range.Memory> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException {
         //System.out.println("In NumberParameterType:parse() for class " + getReturnType().toGenericString());
         
         String input = buffer.next();
@@ -47,7 +47,7 @@ public abstract class NumberParameterType<T extends Number> extends ParameterTyp
     }
     
     @Override
-    public T getDefaultValue(IParameter<T> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException {
+    public T getDefaultValue(Parameter<T, Range.Memory> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException {
         Range.Memory memory = (Range.Memory) parameter.getParamInfo();
         return select(memory != null ? memory.defaultValue() : 0);
     }

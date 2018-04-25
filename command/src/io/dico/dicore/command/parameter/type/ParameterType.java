@@ -1,11 +1,11 @@
 package io.dico.dicore.command.parameter.type;
 
-import io.dico.dicore.command.annotation.Range;
 import io.dico.dicore.command.CommandException;
 import io.dico.dicore.command.ExecutionContext;
+import io.dico.dicore.command.annotation.Range;
 import io.dico.dicore.command.parameter.ArgumentBuffer;
-import io.dico.dicore.command.parameter.IParameter;
-import io.dico.dicore.Reflection;
+import io.dico.dicore.command.parameter.Parameter;
+import com.projectoreville.util.Reflection;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 
@@ -91,25 +91,25 @@ public abstract class ParameterType<TReturn, TParamInfo> {
         return isFlagExplicitly() ? otherType : this;
     }
     
-    public abstract TReturn parse(IParameter<TReturn> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException;
+    public abstract TReturn parse(Parameter<TReturn, TParamInfo> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException;
     
-    public TReturn parseForContext(IParameter<TReturn> parameter, ExecutionContext context, ArgumentBuffer buffer) throws CommandException {
+    public TReturn parseForContext(Parameter<TReturn, TParamInfo> parameter, ExecutionContext context, ArgumentBuffer buffer) throws CommandException {
         return parse(parameter, context.getSender(), buffer);
     }
     
-    public TReturn getDefaultValue(IParameter<TReturn> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException {
+    public TReturn getDefaultValue(Parameter<TReturn, TParamInfo> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException {
         return null;
     }
     
-    public TReturn getDefaultValueForContext(IParameter<TReturn> parameter, ExecutionContext context, ArgumentBuffer buffer) throws CommandException {
+    public TReturn getDefaultValueForContext(Parameter<TReturn, TParamInfo> parameter, ExecutionContext context, ArgumentBuffer buffer) throws CommandException {
         return getDefaultValue(parameter, context.getSender(), buffer);
     }
     
-    public List<String> complete(IParameter<TReturn> parameter, CommandSender sender, Location location, ArgumentBuffer buffer) {
+    public List<String> complete(Parameter<TReturn, TParamInfo> parameter, CommandSender sender, Location location, ArgumentBuffer buffer) {
         return Collections.emptyList();
     }
     
-    public List<String> completeForContext(IParameter<TReturn> parameter, ExecutionContext context, Location location, ArgumentBuffer buffer) {
+    public List<String> completeForContext(Parameter<TReturn, TParamInfo> parameter, ExecutionContext context, Location location, ArgumentBuffer buffer) {
         return complete(parameter, context.getSender(), location, buffer);
     }
     

@@ -1,14 +1,12 @@
 package io.dico.dicore.command.registration.reflect;
 
-import com.thoughtworks.paranamer.BytecodeReadingParanamer;
-import com.thoughtworks.paranamer.CachingParanamer;
-import com.thoughtworks.paranamer.Paranamer;
 import io.dico.dicore.command.*;
 import io.dico.dicore.command.annotation.*;
 import io.dico.dicore.command.parameter.IArgumentPreProcessor;
-import io.dico.dicore.command.parameter.IParameter;
+import io.dico.dicore.command.parameter.Parameter;
 import io.dico.dicore.command.parameter.ParameterList;
 import io.dico.dicore.command.parameter.type.IParameterTypeSelector;
+import io.dico.dicore.command.parameter.type.MapBasedParameterTypeSelector;
 import io.dico.dicore.command.parameter.type.ParameterType;
 import io.dico.dicore.command.parameter.type.ParameterTypes;
 import io.dico.dicore.command.predef.PredefinedCommand;
@@ -36,22 +34,22 @@ public class ReflectiveRegistration {
      * It's just linked instead of using an array for that part. Then we can use an AdaptiveParanamer for the latest fallback, to get bytecode names
      * or, finally, to get the Jvm-provided parameter names.
      */
-    private static final Paranamer paranamer = new CachingParanamer(new BytecodeReadingParanamer());
+    //private static final Paranamer paranamer = new CachingParanamer(new BytecodeReadingParanamer());
     
     @SuppressWarnings("StatementWithEmptyBody")
     private static String[] lookupParameterNames(Method method, java.lang.reflect.Parameter[] parameters, int start) {
         int n = parameters.length;
         String[] out = new String[n - start];
     
-        String[] bytecode;
-        try {
-            bytecode = paranamer.lookupParameterNames(method, false);
-        } catch (Exception ex) {
-            bytecode = new String[0];
-            //System.err.println("io.dico.dicore.command.registration.reflect.ReflectiveRegistration.lookupParameterNames failed to read bytecode");
-            //ex.printStackTrace();
-        }
-        int bn = bytecode.length;
+        //String[] bytecode;
+        //try {
+        //    bytecode = paranamer.lookupParameterNames(method, false);
+        //} catch (Exception ex) {
+        //    bytecode = new String[0];
+        //    System.err.println("io.dico.dicore.command.registration.reflect.ReflectiveRegistration.lookupParameterNames failed to read bytecode");
+        //    //ex.printStackTrace();
+        //}
+        //int bn = bytecode.length;
         
         for (int i = start; i < n; i++) {
             java.lang.reflect.Parameter parameter = parameters[i];
@@ -83,43 +81,51 @@ public class ReflectiveRegistration {
         return out;
     }
     
+    public static void parseCommandGroup(ICommandAddress address, Class<?> clazz, Object instance) throws CommandParseException {
+        parseCommandGroup(address, ParameterTypes.getSelector(), clazz, instance);
+    }
+    
     public static void parseCommandGroup(ICommandAddress address, IParameterTypeSelector selector, Class<?> clazz, Object instance) throws CommandParseException {
         boolean requireStatic = instance == null;
         if (!requireStatic && !clazz.isInstance(instance)) {
             throw new CommandParseException();
         }
-    
+        
         List<Method> methods = new LinkedList<>(Arrays.asList(clazz.getDeclaredMethods()));
-    
+        
         Iterator<Method> it = methods.iterator();
         for (Method method; it.hasNext();) {
             method = it.next();
-        
+            
             if (requireStatic && !Modifier.isStatic(method.getModifiers())) {
                 it.remove();
                 continue;
             }
-        
+            
             if (method.isAnnotationPresent(CmdParamType.class)) {
                 it.remove();
-            
+                
                 if (method.getReturnType() != ParameterType.class || method.getParameterCount() != 0) {
                     throw new CommandParseException("Invalid CmdParamType method: must return ParameterType and take no arguments");
                 }
-            
+                
                 ParameterType<?, ?> type;
                 try {
                     Object inst = Modifier.isStatic(method.getModifiers()) ? null : instance;
                     type = (ParameterType<?, ?>) method.invoke(inst);
                     Objects.requireNonNull(type, "ParameterType returned is null");
                 } catch (Exception ex) {
-                    throw new CommandParseException("Error occurred whilst getting ParameterType from CmdParamType method", ex);
+                    throw new CommandParseException("Error occurred whilst getting ParameterType from CmdParamType method '" + method.toGenericString() + "'", ex);
                 }
-            
+
+                if (selector == ParameterTypes.getSelector()) {
+                    selector = new MapBasedParameterTypeSelector(true);
+                }
+                
                 selector.addType(method.getAnnotation(CmdParamType.class).infolessAlias(), type);
             }
         }
-    
+        
         GroupMatcherCache groupMatcherCache = new GroupMatcherCache(clazz, address);
         for (Method method : methods) {
             if (method.isAnnotationPresent(Cmd.class)) {
@@ -127,10 +133,7 @@ public class ReflectiveRegistration {
                 groupMatcherCache.getGroupFor(method).addChild(parsed);
             }
         }
-    }
-    
-    public static void parseCommandGroup(ICommandAddress address, Class<?> clazz, Object instance) throws CommandParseException {
-        parseCommandGroup(address, ParameterTypes.getSelector(), clazz, instance);
+        
     }
     
     private static final class GroupMatcherCache {
@@ -212,7 +215,7 @@ public class ReflectiveRegistration {
         command.setParameterOrder(parameterNames);
         
         for (int i = start, n = parameters.length; i < n; i++) {
-            IParameter parameter = parseParameter(selector, method, parameters[i], parameterNames[i - start]);
+            Parameter<?, ?> parameter = parseParameter(selector, method, parameters[i], parameterNames[i - start]);
             list.addParameter(parameter);
         }
         
@@ -273,7 +276,7 @@ public class ReflectiveRegistration {
         return parseCommandAttributes(selector, method, command, method.getParameters());
     }
     
-    public static IParameter parseParameter(IParameterTypeSelector selector, Method method, java.lang.reflect.Parameter parameter, String name) throws CommandParseException {
+    public static Parameter<?, ?> parseParameter(IParameterTypeSelector selector, Method method, java.lang.reflect.Parameter parameter, String name) throws CommandParseException {
         Class<?> type = parameter.getType();
         if (parameter.isVarArgs()) {
             type = type.getComponentType();
@@ -330,7 +333,7 @@ public class ReflectiveRegistration {
         
         try {
             //noinspection unchecked
-            return IParameter.newParameter(name, descString, parameterType, parameterInfo, name.startsWith("-"), flag == null ? null : flag.permission());
+            return Parameter.newParameter(name, descString, parameterType, parameterInfo, name.startsWith("-"), flag == null ? null : flag.permission());
         } catch (Exception ex) {
             throw new CommandParseException("Invalid parameter", ex);
         }

@@ -1,6 +1,6 @@
 package io.dico.dicore.command.parameter.type;
 
-import io.dico.dicore.Reflection;
+import com.projectoreville.util.Reflection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;

@@ -1,13 +1,13 @@
 package io.dico.dicore.command;
 
-import com.google.common.collect.ImmutableList;
 import io.dico.dicore.command.predef.HelpCommand;
 
 import java.util.*;
 
 public class ChildCommandAddress extends ModifiableCommandAddress {
     ModifiableCommandAddress parent;
-    List<String> names = new ArrayList<>(4);
+    final List<String> namesModifiable = new ArrayList<>(4);
+    List<String> names = namesModifiable;
     Command command;
     
     public ChildCommandAddress() {
@@ -63,7 +63,7 @@ public class ChildCommandAddress extends ModifiableCommandAddress {
     
     @Override
     public String getMainKey() {
-        return names.isEmpty() ? null : names.get(0);
+        return namesModifiable.isEmpty() ? null : namesModifiable.get(0);
     }
     
     @Override
@@ -80,52 +80,12 @@ public class ChildCommandAddress extends ModifiableCommandAddress {
     
     public void finalizeNames() {
         if (names instanceof ArrayList) {
-            names = ImmutableList.copyOf(names);
+            names = Collections.unmodifiableList(namesModifiable);
         }
     }
     
     Iterator<String> modifiableNamesIterator() {
-        if (names instanceof ArrayList) {
-            return names.iterator();
-        }
-        return new Iterator<String>() {
-            List<String> names = ChildCommandAddress.this.names;
-            int idx = 0;
-            int size = names.size();
-            boolean removed = true;
-            
-            @Override
-            public boolean hasNext() {
-                return idx < size;
-            }
-    
-            @Override
-            public String next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                removed = false;
-                return names.get(idx++);
-            }
-    
-            @Override
-            public void remove() {
-                if (removed) {
-                    throw new IllegalStateException();
-                }
-                removed = true;
-                idx--;
-                size--;
-                
-                if (names instanceof ArrayList) {
-                    names.remove(idx);
-                } else {
-                    names = new ArrayList<>(names);
-                    names.remove(idx);
-                    names = ImmutableList.copyOf(names);
-                }
-            }
-        };
+        return namesModifiable.iterator();
     }
     
     void setParent(ModifiableCommandAddress parent) {

@@ -1,8 +1,8 @@
 package io.dico.dicore.command;
 
-import io.dico.dicore.Formatting;
+import io.dico.dicore.command.chat.Formatting;
 import io.dico.dicore.command.parameter.ArgumentBuffer;
-import io.dico.dicore.command.parameter.IParameter;
+import io.dico.dicore.command.parameter.Parameter;
 import io.dico.dicore.command.parameter.ParameterList;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -38,7 +38,7 @@ public class ExecutionContext {
     // these fields store information required to provide completions.
     // the parameter to complete is the parameter that threw an exception when it was parsing.
     // the exception's message was discarded because it is a completion.
-    private IParameter<?> parameterToComplete;
+    private Parameter<?, ?> parameterToComplete;
     // this is the cursor that the ArgumentBuffer is reset to when suggested completions are requested.
     private int parameterToCompleteCursor = -1;
     
@@ -89,13 +89,13 @@ public class ExecutionContext {
         ArgumentBuffer buffer = this.processedBuffer;
         Map<String, Object> parameterValues = this.parameterValues = new HashMap<>();
         Set<String> parsedParameters = this.parsedParameters = new HashSet<>();
-        List<IParameter> indexedParameters = parameterList.getIndexedParameters();
-        IParameter repeated = parameterList.getRepeatedParameter();
+        List<Parameter<?, ?>> indexedParameters = parameterList.getIndexedParameters();
+        Parameter<?, ?> repeated = parameterList.getRepeatedParameter();
         
         int indexCount = indexedParameters.size();
         int requiredCount = parameterList.getRequiredCount();
         //System.out.println("requiredCount = " + requiredCount);
-        IParameter param = null;
+        Parameter<?, ?> param = null;
         boolean repeatedSeen = false;
         int index = 0;
         // used for completions. The buffer is reset to this cursor when requesting completions from the parameter which threw an exception.
@@ -171,7 +171,7 @@ public class ExecutionContext {
         } finally {
             
             // add default values for unset parameters
-            for (Map.Entry<String, IParameter> entry : parameterList.getParametersByName().entrySet()) {
+            for (Map.Entry<String, Parameter<?, ?>> entry : parameterList.getParametersByName().entrySet()) {
                 String name = entry.getKey();
                 if (!parsedParameters.contains(name)) {
                     if (repeated == entry.getValue()) {
@@ -387,7 +387,7 @@ public class ExecutionContext {
      *
      * @return the parameter to complete.
      */
-    public IParameter getParameterToComplete() {
+    public Parameter<?, ?> getParameterToComplete() {
         return parameterToComplete;
     }
     

@@ -1,5 +1,6 @@
 package io.dico.dicore.command;
 
+import io.dico.dicore.command.chat.IChatController;
 import io.dico.dicore.command.parameter.type.IParameterTypeSelector;
 import io.dico.dicore.command.parameter.type.MapBasedParameterTypeSelector;
 import io.dico.dicore.command.parameter.type.ParameterType;
@@ -8,6 +9,7 @@ import io.dico.dicore.command.predef.PredefinedCommand;
 import io.dico.dicore.command.predef.SyntaxCommand;
 import io.dico.dicore.command.registration.reflect.ReflectiveRegistration;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -17,8 +19,8 @@ import java.util.function.Consumer;
 public final class CommandBuilder {
     private final RootCommandAddress root;
     private ModifiableCommandAddress cur;
-    private IParameterTypeSelector selector = new MapBasedParameterTypeSelector(true);
-    
+    private IParameterTypeSelector selector;
+
     /**
      * Instantiate a new CommandBuilder with a new command root system
      * Commands registered to this command builder might interfere with
@@ -27,7 +29,7 @@ public final class CommandBuilder {
     public CommandBuilder() {
         this(new RootCommandAddress());
     }
-    
+
     /**
      * Instantiate a new CommandBuilder with a specified root address.
      * If the root address is identical to that of another command builder,
@@ -38,8 +40,9 @@ public final class CommandBuilder {
     public CommandBuilder(RootCommandAddress root) {
         this.root = Objects.requireNonNull(root);
         this.cur = root;
+        this.selector = new MapBasedParameterTypeSelector(true);
     }
-    
+
     /**
      * Add a sub command at the current address
      * The current address can be inspected using {@link #getAddress()}
@@ -54,7 +57,7 @@ public final class CommandBuilder {
         address.addNameAndAliases(name, aliases);
         return addSubCommand(address);
     }
-    
+
     /**
      * Add a subcommand as an address at the current address
      * The result of this call is the same as
@@ -68,7 +71,7 @@ public final class CommandBuilder {
         cur.addChild(address);
         return this;
     }
-    
+
     /**
      * Search the given class for any (static) methods using command annotations
      * The class gets a localized parameter type selector if it defines parameter types.
@@ -82,7 +85,7 @@ public final class CommandBuilder {
     public CommandBuilder registerCommands(Class<?> clazz) {
         return registerCommands(clazz, null);
     }
-    
+
     /**
      * Search the given object's class for methods using command annotations.
      * If the object is null, only static methods are checked. Otherwise, instance methods are also checked.
@@ -97,7 +100,7 @@ public final class CommandBuilder {
     public CommandBuilder registerCommands(Object object) {
         return registerCommands(object.getClass(), object);
     }
-    
+
     /**
      * Search the given class for methods using command annotations.
      * The class gets a localized parameter type selector if it defines parameter types.
@@ -118,7 +121,7 @@ public final class CommandBuilder {
             throw new IllegalArgumentException(ex);
         }
     }
-    
+
     /**
      * register the {@link HelpCommand} as a sub command at the current address
      *
@@ -128,7 +131,7 @@ public final class CommandBuilder {
         HelpCommand.registerAsChild(cur);
         return this;
     }
-    
+
     /**
      * register the {@link SyntaxCommand} as a sub command a the current address
      *
@@ -138,7 +141,7 @@ public final class CommandBuilder {
         SyntaxCommand.registerAsChild(cur);
         return this;
     }
-    
+
     /**
      * Generate the predefined commands.
      * These are presets.
@@ -160,13 +163,32 @@ public final class CommandBuilder {
         }
         return this;
     }
-    
+
+    /**
+     * Unregister any childs present at the given keys.
+     * <p>
+     * This method can be used to remove unwanted keys, that might have been added
+     * outside of your control. For example, because you didn't want all commands
+     * registered by {@link #registerCommands(Class, Object)}, or because you didn't
+     * want the help command registered by {@link #group(String, String...)}
+     *
+     * @param removeAliases true if any aliases of the children present at the keys should be removed
+     * @param keys          a varargs array containing the keys
+     * @return this
+     * @throws IllegalArgumentException if keys array is empty
+     */
+    public CommandBuilder unregisterCommands(boolean removeAliases, String... keys) {
+        cur.removeChildren(removeAliases, keys);
+        return this;
+    }
+
     /**
      * Jump to the sub-address with the given name as main key.
      * If an address with the exact name as main key exists,
      * that address becomes the current address.
      * <p>
      * Otherwise, a new addresses is registered with the name and aliases.
+     * New addresses registered by this command have a HelpCommand added by default.
      * <p>
      * After this call, any registered commands are registered as a sub command
      * to the new address. To restore the previous state, a call to {@link #parent()}
@@ -187,10 +209,10 @@ public final class CommandBuilder {
         cur = address;
         return this;
     }
-    
+
     /**
      * Sets the description of a group created by {@link #group(String, String...)}
-     * Should be called subsequently to making a call to {@link #group(String, String...)}
+     * Can be called subsequently to making a call to {@link #group(String, String...)}
      *
      * @param shortDescription a short description
      * @param description      the lines of a full description.
@@ -198,16 +220,12 @@ public final class CommandBuilder {
      */
     public CommandBuilder setGroupDescription(String shortDescription, String... description) {
         Command command = cur.getCommand();
-        if (command == null || !(command instanceof HelpCommand)) {
-            throw new IllegalStateException("Not in a group created by #group()");
-        }
-        
-        cur.setCommand(((HelpCommand) command)
+        cur.setCommand(command
                 .setShortDescription(shortDescription)
                 .setDescription(description));
         return this;
     }
-    
+
     /**
      * Jump up a level in the address
      *
@@ -222,7 +240,7 @@ public final class CommandBuilder {
         }
         throw new IllegalStateException("No parent exists at this address");
     }
-    
+
     /**
      * Jump to the root (empty) address,
      * such that a subsequent call to {@link #parent()}
@@ -234,7 +252,7 @@ public final class CommandBuilder {
         cur = root;
         return this;
     }
-    
+
     /**
      * Get the current address, as a space-separated string
      *
@@ -243,7 +261,7 @@ public final class CommandBuilder {
     public String getAddress() {
         return cur.getAddress();
     }
-    
+
     /**
      * Get the depth of the current address.
      * This is equivalent to {@code getAddress().split(" ").length}.
@@ -254,7 +272,7 @@ public final class CommandBuilder {
     public int getDepth() {
         return cur.getDepth();
     }
-    
+
     /**
      * Set the command at the current group. The command is set
      * a level higher than it would be if this were a call to {@link #addSubCommand(String, Command, String...)}
@@ -273,38 +291,53 @@ public final class CommandBuilder {
             command.setShortDescription(current.getShortDescription());
             command.setDescription(current.getDescription());
         }
-        
+
         cur.setCommand(command);
         return this;
     }
-    
+
+    /**
+     * Configure the chat controller at this address. The chat controller
+     * is used for all children down the tree if they don't explicitly have
+     * their own chat controller configured. If this isn't configured,
+     * {@code ChatControllers.defaultChat()} is used.
+     *
+     * @param chatController the chat controller
+     * @return this
+     */
+    public CommandBuilder setChatController(IChatController chatController) {
+        cur.setChatController(chatController);
+        return this;
+    }
+
     /**
      * Add the parameter type to this builder's selector.
      *
      * @param type the type
-     * @param <T> the return type of the parameter type
+     * @param <T>  the return type of the parameter type
      * @return this
      */
     public <T> CommandBuilder addParameterType(ParameterType<T, Void> type) {
         selector.addType(false, type);
         return this;
     }
-    
+
     /**
      * Add the parameter type to this builder's selector.
      *
      * @param infolessAlias whether to also register the type with an infoless alias.
      *                      this increases the priority assigned to the type if no info object is present.
-     * @param type the type
-     * @param <T> the return type of the parameter type
-     * @param <C> the parameter config type (info object)
+     * @param type          the type
+     * @param <T>           the return type of the parameter type
+     * @param <C>           the parameter config type (info object)
      * @return this
      */
+
     public <T, C> CommandBuilder addParameterType(boolean infolessAlias, ParameterType<T, C> type) {
         selector.addType(infolessAlias, type);
         return this;
     }
-    
+
     /**
      * Get the dispatcher for the root address.
      * The dispatcher should be used to finally register all commands,
@@ -315,7 +348,33 @@ public final class CommandBuilder {
     public ICommandDispatcher getDispatcher() {
         return root;
     }
-    
-    
-    
+
+    /**
+     * Print debugging information about the current addresses and commands in this builder
+     * A StackTraceElement indicating where this was called from is also included
+     *
+     * @return this
+     */
+    public CommandBuilder printDebugInformation() {
+        String address = cur == root ? "<root>" : cur.getAddress();
+        StackTraceElement caller = getCallsite();
+
+        StringBuilder message = new StringBuilder("### io.dico.dicore.command.CommandBuilder dump ###");
+        message.append("\nCalled from ").append(caller);
+        message.append("\nPosition: ").append(address);
+        cur.appendDebugInformation(message, "", new HashSet<>());
+
+        System.out.println(message);
+        return this;
+    }
+
+    private static StackTraceElement getCallsite() {
+        // [0] Thread.currentThread()
+        // [1] CommandBuilder.getCallsite()
+        // [2] Calling method
+        // [3] Method calling the calling method
+        StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        return trace.length > 3 ? trace[3] : null;
+    }
+
 }
