@@ -6,17 +6,17 @@
 
     <groupId>io.dico.dicore</groupId>
     <artifactId>dicore3</artifactId>
-    <version>1.0.1</version>
+    <version>1.2</version>
     <packaging>pom</packaging>
 
     <modules>
         <module>core</module>
         <module>command</module>
-        <module>commandx</module>
-        <module>nms-api</module>
-        <module>nms-api/nms-v1_8_R3</module>
-        <module>factions-api</module>
-        <module>factions-api/factionsone-1.2.2</module>
+        <!--<module>commandx</module>-->
+        <!--<module>nms-api</module>-->
+        <!--<module>nms-api/nms-v1_8_R3</module>-->
+        <!--<module>factions-api</module>-->
+        <!--<module>factions-api/factionsone-1.2.2</module>-->
     </modules>
 
     <build>
@@ -45,15 +45,9 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.8.8-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <!--Bukkit API-->
-        <dependency>
-            <groupId>org.bukkit</groupId>
-            <artifactId>bukkit</artifactId>
-            <version>1.8.6-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
+            <version>1.13-pre7</version>
+            <scope>system</scope>
+            <systemPath>E:/Trip/res/spigot-1.13-pre7.jar</systemPath>
         </dependency>
 
         <dependency>

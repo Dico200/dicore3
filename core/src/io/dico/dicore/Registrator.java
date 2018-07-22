@@ -1,8 +1,5 @@
 package io.dico.dicore;
 
-import io.dico.dicore.event.ChainedListenerHandle;
-import io.dico.dicore.event.ChainedListenerHandles;
-import io.dico.dicore.event.ListenerHandle;
 import org.bukkit.Server;
 import org.bukkit.event.*;
 import org.bukkit.event.player.PlayerEvent;
@@ -46,6 +43,7 @@ import java.util.function.Consumer;
  * Standard Registrator instances also use a fake plugin identity to register its listeners.
  * You can use the {{@link #Registrator(Plugin)}} constructor to use real plugin identities.
  */
+@SuppressWarnings("DanglingJavadoc")
 public final class Registrator {
 
     // ############################################
@@ -79,13 +77,13 @@ public final class Registrator {
              *
              *
              * <pre>{@code
-            private Listener getListenerFor(HandlerList list, EventPriority priority) {
-            int needed = (int) (listeners.get(list).stream().filter(listener -> listener.getPriority() == priority).count() + 1);
-            while (needed > myListeners.size()) {
-            myListeners.add(new Listener() {});
-            }
-            return myListeners.get(needed - 1);
-            }
+                private Listener getListenerFor(HandlerList list, EventPriority priority) {
+                    int needed = (int) (listeners.get(list).stream().filter(listener -> listener.getPriority() == priority).count() + 1);
+                    while (needed > myListeners.size()) {
+                        myListeners.add(new Listener() {});
+                    }
+                    return myListeners.get(needed - 1);
+                }
              * }</pre>
              *
              *
@@ -246,10 +244,10 @@ public final class Registrator {
      * @param handler    the listener
      * @param <T>        the event type
      * @return this
-     */
+     * /
     public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, Consumer<? super T> handler) {
-        return makeListenerHandle(eventClass, EventPriority.HIGHEST, handler);
-    }
+    return makeListenerHandle(eventClass, EventPriority.HIGHEST, handler);
+    }/* */
 
     /**
      * Make a new listener handle for the given event type.
@@ -262,11 +260,11 @@ public final class Registrator {
      * @param handler    the listener
      * @param <T>        the event type
      * @return this
-     */
+     * /
     public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, EventPriority priority, Consumer<? super T> handler) {
-        boolean ignoreCancelled = Cancellable.class.isAssignableFrom(eventClass) && priority.getSlot() > EventPriority.LOW.getSlot();
-        return makeListenerHandle(eventClass, priority, ignoreCancelled, handler);
-    }
+    boolean ignoreCancelled = Cancellable.class.isAssignableFrom(eventClass) && priority.getSlot() > EventPriority.LOW.getSlot();
+    return makeListenerHandle(eventClass, priority, ignoreCancelled, handler);
+    }/* */
 
     /**
      * Make a new listener handle for the given event type.
@@ -279,10 +277,10 @@ public final class Registrator {
      * @param handler         The listener
      * @param <T>             The event type
      * @return this
-     */
+     * /
     public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, boolean ignoreCancelled, Consumer<? super T> handler) {
-        return makeListenerHandle(eventClass, ignoreCancelled ? EventPriority.HIGHEST : EventPriority.LOW, ignoreCancelled, handler);
-    }
+    return makeListenerHandle(eventClass, ignoreCancelled ? EventPriority.HIGHEST : EventPriority.LOW, ignoreCancelled, handler);
+    }/* */
 
     /**
      * Make a new listener handle for the given event type.
@@ -294,10 +292,10 @@ public final class Registrator {
      * @param handler         the listener
      * @param <T>             the event type
      * @return this
-     */
+     * /
     public <T extends Event> ListenerHandle makeListenerHandle(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, Consumer<? super T> handler) {
-        return (ListenerHandle) createRegistration(true, priority, ignoreCancelled, eventClass, handler);
-    }
+    return (ListenerHandle) createRegistration(true, priority, ignoreCancelled, eventClass, handler);
+    }/* */
 
     /**
      * Register a listener for the given event type.
@@ -374,6 +372,7 @@ public final class Registrator {
         return registerListeners(instance.getClass(), instance);
     }
 
+    /* * /
     public ChainedListenerHandle makeChainedListenerHandle(Class<?> clazz, Object instance) {
         ChainedListenerHandle rv = ChainedListenerHandles.empty();
         for (ListenerFieldInfo fieldInfo : getListenerFields(clazz, instance)) {
@@ -395,6 +394,7 @@ public final class Registrator {
         ListenerHandle second = makeListenerHandle(PlayerKickEvent.class, EventPriority.NORMAL, handler);
         return ChainedListenerHandles.singleton(first).withElement(second);
     }
+    /* */
 
     public Registrator registerPlayerQuitListener(Consumer<? super PlayerEvent> handler) {
         registerListener(PlayerQuitEvent.class, EventPriority.NORMAL, handler);
@@ -625,9 +625,11 @@ public final class Registrator {
                                                               Class<T> eventClass,
                                                               Consumer<? super T> handler) {
         EventExecutor executor = newEventExecutor(eventClass, handler);
+        /* * /
         if (asHandle) {
             return new RegistrationWithHandle(eventClass, caller, executor, priority, plugin, ignoreCancelled);
         }
+        /* */
         return new Registration(eventClass, caller, executor, priority, plugin, ignoreCancelled);
     }
 
@@ -808,6 +810,7 @@ public final class Registrator {
     // # Internal types
     // ############################################
 
+    /* * /
     private static final class RegistrationWithHandle extends Registration implements ListenerHandle {
         RegistrationWithHandle(Class<?> eventClass, StackTraceElement caller, EventExecutor executor, EventPriority priority, Plugin plugin, boolean ignoreCancelled) {
             super(eventClass, caller, executor, priority, plugin, ignoreCancelled);
@@ -823,6 +826,7 @@ public final class Registrator {
             super.unregister();
         }
     }
+    /* */
 
     private static final class HandlerListInfo {
         final HandlerList handlerList;
@@ -943,11 +947,12 @@ public final class Registrator {
         public void setNaggable(boolean b) {
         }
 
+        /* * /
         @Override
         public com.avaje.ebean.EbeanServer getDatabase() {
             return null;
         }
-
+        /* */
         @Override
         public org.bukkit.generator.ChunkGenerator getDefaultWorldGenerator(String s, String s1) {
             return null;

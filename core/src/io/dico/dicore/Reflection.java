@@ -1,12 +1,3 @@
-/*
- * Copyright (c) 2017, ProjectOreville
- *
- * All rights reserved.
- *
- * Author(s):
- *  Dico Karssiens
- */
-
 package io.dico.dicore;
 
 import io.dico.dicore.exceptions.ExceptionHandler;

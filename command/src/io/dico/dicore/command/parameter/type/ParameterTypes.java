@@ -4,10 +4,8 @@ import io.dico.dicore.command.CommandException;
 import io.dico.dicore.command.Validate;
 import io.dico.dicore.command.parameter.ArgumentBuffer;
 import io.dico.dicore.command.parameter.IParameter;
-import io.dico.dicore.inventory.ItemProperties;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -44,7 +42,7 @@ public class ParameterTypes {
     public static final NumberParameterType<Float> FLOAT;
     public static final ParameterType<Player, Void> PLAYER;
     public static final ParameterType<OfflinePlayer, Void> OFFLINE_PLAYER;
-    public static final ParameterType<ItemProperties, Void> ITEM_TYPE;
+    //public static final ParameterType<ItemProperties, Void> ITEM_TYPE;
     //public static final ParameterType<Boolean, Void> PRESENCE;
     //public static final NumberParameterType<BigDecimal> BIG_DECIMAL;
     //public static final NumberParameterType<BigInteger> BIG_INTEGER;
@@ -240,7 +238,8 @@ public class ParameterTypes {
                 return result;
             }
         });
-    
+
+        /*
         ITEM_TYPE = registerType(true, new ParameterType<ItemProperties, Void>(ItemProperties.class) {
             @Override
             public ItemProperties parse(IParameter<ItemProperties> parameter, CommandSender sender, ArgumentBuffer buffer) throws CommandException {
@@ -325,7 +324,8 @@ public class ParameterTypes {
                 }
             }
         });
-        
+        */
+
         /*
         PRESENCE = registerType(false, new ParameterType<Boolean, Void>(Boolean.class) {
             @Override
