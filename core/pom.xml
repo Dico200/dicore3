@@ -6,11 +6,10 @@
     <parent>
         <groupId>io.dico.dicore</groupId>
         <artifactId>dicore3</artifactId>
-        <version>1.2</version>
+        <version>1.2-mc-1.13</version>
     </parent>
     <artifactId>dicore3-core</artifactId>
     <packaging>jar</packaging>
-    <version>1.2</version>
 
     <build>
         <plugins>
