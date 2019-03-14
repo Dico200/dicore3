@@ -60,7 +60,7 @@ public class FactionsFactory {
             Method checkMethod = driverClass.getDeclaredMethod("checkPluginMatch");
             checkMethod.setAccessible(true);
             checkMethod.invoke(null);
-        } catch (ReflectiveOperationException ex) {
+        } catch (Throwable ex) {
             return null;
         }
     
